@@ -52,6 +52,9 @@ dependencies:
   
   # SVG поддержка
   flutter_svg: ^2.0.10+1
+  
+  # Google Fonts для декоративных шрифтов
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -83,6 +86,8 @@ flutter:
   # Ассеты приложения
   assets:
     - assets/images/
+    - assets/images/fon1.jpg
+    - assets/images/window1.jpg
     - assets/icons/
     - assets/animations/
     - assets/sounds/

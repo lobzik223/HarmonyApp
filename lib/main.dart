@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
+import 'features/plan/plan_selection_section.dart';
 
 void main() {
   runApp(const HarmonyApp());
@@ -18,7 +19,7 @@ class HarmonyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+      home: const PlanSelectionSection(),
     );
   }
 }
@@ -49,6 +50,65 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          // Верхняя иконка с кнопкой (слева)
+          Positioned(
+            top: 62,
+            left: 16,
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: Image.asset(
+                  'assets/icons/butonicon.png',
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    print('Ошибка загрузки изображения: $error');
+                    print('Путь: assets/icons/butonicon.png');
+                    return Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: const Icon(
+                        Icons.settings,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+          // Верхняя иконка пользователя (справа)
+          Positioned(
+            top: 62,
+            right: 16,
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: CustomPaint(
+                  size: const Size(50, 50),
+                  painter: UserTopIconPainter(),
+                ),
+              ),
+            ),
+          ),
           // Нижнее меню поверх изображения
           Positioned(
             bottom: 0,
@@ -74,22 +134,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   // Иконки меню
                   Positioned(
-                    top: 15,
+                    top: 10,
                     left: 0,
                     right: 0,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Левая иконка - профиль (SVG)
-                          _buildProfileIcon(),
-                        // Вторая иконка - глаз
-                        _buildMenuIcon(Icons.visibility_outlined),
+                          // Левая иконка - медитация
+                          _buildMeditationIcon(),
+                        // Вторая иконка - сон
+                        _buildSleepIcon(),
                         // Центральная кнопка с градиентом
                         _buildCentralButton(),
-                        // Четвертая иконка - чат
-                        _buildMenuIcon(Icons.chat_bubble_outline),
-                        // Правая иконка - настройки
-                        _buildMenuIcon(Icons.tune),
+                        // Четвертая иконка - плеер
+                        _buildPlayerIcon(),
+                        // Правая иконка - книга
+                        _buildBookIcon(),
                       ],
                     ),
                   ),
@@ -102,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMenuIcon(IconData icon) {
+  Widget _buildMeditationIcon() {
     return Container(
       width: 40,
       height: 40,
@@ -110,15 +170,35 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Icon(
-        icon,
+      child: Center(
+        child: Image.asset(
+          'assets/icons/profileicon.png',
+          width: 28,
+          height: 28,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            print('Ошибка загрузки изображения: $error');
+            print('Путь: assets/icons/profileicon.png');
+            return Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.person,
         color: Colors.white,
-        size: 24,
+                size: 20,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildProfileIcon() {
+  Widget _buildSleepIcon() {
     return Container(
       width: 40,
       height: 40,
@@ -126,9 +206,87 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: CustomPaint(
-        size: const Size(28, 28),
-        painter: ProfileIconPainter(),
+      child: Center(
+        child: Image.asset(
+          'assets/icons/mediaicon.png',
+          width: 28,
+          height: 28,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            print('Ошибка загрузки изображения: $error');
+            print('Путь: assets/icons/mediaicon.png');
+            return Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.music_note,
+                color: Colors.white,
+                size: 20,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlayerIcon() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CustomPaint(
+            size: const Size(28, 28),
+            painter: PlayerIconPainter(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookIcon() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Center(
+        child: Image.asset(
+          'assets/icons/bookicon.png',
+          width: 28,
+          height: 28,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            print('Ошибка загрузки изображения: $error');
+            print('Путь: assets/icons/bookicon.png');
+            return Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.book,
+                color: Colors.white,
+                size: 20,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -159,13 +317,13 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15),
             child: Image.asset(
-              'assets/icons/image-Photoroom.png',
+              'assets/icons/harmonyicon.png',
               width: 30,
               height: 30,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 print('Ошибка загрузки изображения: $error');
-                print('Путь: assets/icons/image-Photoroom.png');
+                print('Путь: assets/icons/harmonyicon.png');
                 // Если изображение не загружается, показываем иконку
                 return Container(
                   width: 30,
@@ -270,121 +428,204 @@ class BottomMenuClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-class ProfileIconPainter extends CustomPainter {
+
+
+// Иконка пользователя для верхней части (50x50)
+class UserTopIconPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    // SVG координаты уже для 50x50, поэтому используем их напрямую
+    final double scale = 1.0;
+    
+    // Фон - полупрозрачный черный круг
+    final backgroundPaint = Paint()
+      ..color = Colors.black.withOpacity(0.05)
+      ..style = PaintingStyle.fill;
+    
+    final backgroundRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(size.width / 2),
+    );
+    canvas.drawRRect(backgroundRect, backgroundPaint);
+    
+    // Белые контуры
+    final strokePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.7;
-
-    final path = Path();
-
-    // Голова (круг)
-    final headRadius = size.width * 0.104;
-    path.addOval(Rect.fromCenter(
-      center: Offset(size.width * 0.5, size.height * 0.25),
-      width: headRadius * 2,
-      height: headRadius * 2,
-    ));
-
-    // Плечи и тело
-    path.moveTo(size.width * 0.125, size.height * 0.708);
-    path.cubicTo(
-      size.width * 0.232, size.height * 0.654,
-      size.width * 0.25, size.height * 0.64,
-      size.width * 0.25, size.height * 0.625,
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    
+    // Голова - круг
+    final headCenter = Offset(24.9999, 18);
+    final headRadius = 4.66667;
+    canvas.drawCircle(headCenter, headRadius, strokePaint);
+    
+    // Тело - путь
+    final bodyPath = Path();
+    bodyPath.moveTo(34.3334, 31.4167);
+    bodyPath.cubicTo(
+      34.3334, 34.3162,
+      34.3334, 36.6667,
+      25.0001, 36.6667,
     );
-    path.cubicTo(
-      size.width * 0.25, size.height * 0.503,
-      size.width * 0.339, size.height * 0.399,
-      size.width * 0.459, size.height * 0.379,
+    bodyPath.cubicTo(
+      15.6667, 36.6667,
+      15.6667, 34.3162,
+      15.6667, 31.4167,
     );
-    path.cubicTo(
-      size.width * 0.515, size.height * 0.374,
-      size.width * 0.571, size.height * 0.374,
-      size.width * 0.625, size.height * 0.379,
+    bodyPath.cubicTo(
+      15.6667, 28.5172,
+      19.8454, 26.1667,
+      25.0001, 26.1667,
     );
-    path.cubicTo(
-      size.width * 0.661, size.height * 0.399,
-      size.width * 0.75, size.height * 0.503,
-      size.width * 0.75, size.height * 0.625,
+    bodyPath.cubicTo(
+      30.1547, 26.1667,
+      34.3334, 28.5172,
+      34.3334, 31.4167,
     );
-    path.cubicTo(
-      size.width * 0.75, size.height * 0.64,
-      size.width * 0.768, size.height * 0.654,
-      size.width * 0.875, size.height * 0.708,
-    );
-
-    // Левая рука
-    path.moveTo(size.width * 0.396, size.height * 0.667);
-    path.cubicTo(
-      size.width * 0.352, size.height * 0.717,
-      size.width * 0.324, size.height * 0.752,
-      size.width * 0.307, size.height * 0.785,
-    );
-    path.cubicTo(
-      size.width * 0.307, size.height * 0.821,
-      size.width * 0.307, size.height * 0.857,
-      size.width * 0.302, size.height * 0.893,
-    );
-    path.cubicTo(
-      size.width * 0.302, size.height * 0.929,
-      size.width * 0.302, size.height * 0.965,
-      size.width * 0.280, size.height * 0.965,
-    );
-    path.cubicTo(
-      size.width * 0.258, size.height * 0.965,
-      size.width * 0.236, size.height * 0.929,
-      size.width * 0.236, size.height * 0.893,
-    );
-    path.cubicTo(
-      size.width * 0.236, size.height * 0.857,
-      size.width * 0.236, size.height * 0.821,
-      size.width * 0.236, size.height * 0.785,
-    );
-    path.cubicTo(
-      size.width * 0.236, size.height * 0.752,
-      size.width * 0.208, size.height * 0.717,
-      size.width * 0.164, size.height * 0.667,
-    );
-
-    // Правая рука
-    path.moveTo(size.width * 0.458, size.height * 0.667);
-    path.cubicTo(
-      size.width * 0.502, size.height * 0.717,
-      size.width * 0.530, size.height * 0.752,
-      size.width * 0.547, size.height * 0.785,
-    );
-    path.cubicTo(
-      size.width * 0.547, size.height * 0.821,
-      size.width * 0.547, size.height * 0.857,
-      size.width * 0.552, size.height * 0.893,
-    );
-    path.cubicTo(
-      size.width * 0.552, size.height * 0.929,
-      size.width * 0.552, size.height * 0.965,
-      size.width * 0.574, size.height * 0.965,
-    );
-    path.cubicTo(
-      size.width * 0.596, size.height * 0.965,
-      size.width * 0.618, size.height * 0.929,
-      size.width * 0.618, size.height * 0.893,
-    );
-    path.cubicTo(
-      size.width * 0.618, size.height * 0.857,
-      size.width * 0.618, size.height * 0.821,
-      size.width * 0.618, size.height * 0.785,
-    );
-    path.cubicTo(
-      size.width * 0.618, size.height * 0.752,
-      size.width * 0.646, size.height * 0.717,
-      size.width * 0.690, size.height * 0.667,
-    );
-
-    canvas.drawPath(path, paint);
+    bodyPath.close();
+    
+    canvas.drawPath(bodyPath, strokePaint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+// Иконка плеера для нижнего меню
+class PlayerIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.7
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    // Основной корпус плеера
+    final playerPath = Path();
+    playerPath.moveTo(size.width * 0.099, size.height * 0.292); // 2.781/28
+    playerPath.cubicTo(
+      size.width * 0.081, size.height * 0.444, // 2.26/28
+      size.width * 0.071, size.height * 0.52, // 2.0/28
+      size.width * 0.111, size.height * 0.334, // 3.106/28
+    );
+    playerPath.cubicTo(
+      size.width * 0.15, size.height * 0.292, // 4.212/28
+      size.width * 0.221, size.height * 0.292, // 6.18/28
+      size.width * 0.361, size.height * 0.292, // 10.118/28
+    );
+    playerPath.lineTo(size.width * 0.639, size.height * 0.292); // 17.882/28
+    playerPath.cubicTo(
+      size.width * 0.779, size.height * 0.292, // 21.819/28
+      size.width * 0.849, size.height * 0.292, // 23.788/28
+      size.width * 0.889, size.height * 0.334, // 24.894/28
+    );
+    playerPath.cubicTo(
+      size.width * 0.995, size.height * 0.52, // 25.0/28
+      size.width * 0.929, size.height * 0.444, // 25.74/28
+      size.width * 0.901, size.height * 0.292, // 25.22/28
+    );
+    playerPath.lineTo(size.width * 0.902, size.height * 0.7); // 24.726/28
+    playerPath.cubicTo(
+      size.width * 0.868, size.height * 0.803, // 24.318/28
+      size.width * 0.868, size.height * 0.855, // 24.114/28
+      size.width * 0.868, size.height * 0.857, // 23.067/28
+    );
+    playerPath.cubicTo(
+      size.width * 0.786, size.height * 0.917, // 22.02/28
+      size.width * 0.731, size.height * 0.917, // 20.476/28
+      size.width * 0.621, size.height * 0.917, // 17.389/28
+    );
+    playerPath.lineTo(size.width * 0.379, size.height * 0.917); // 10.611/28
+    playerPath.cubicTo(
+      size.width * 0.269, size.height * 0.917, // 7.524/28
+      size.width * 0.214, size.height * 0.917, // 5.98/28
+      size.width * 0.176, size.height * 0.857, // 4.932/28
+    );
+    playerPath.cubicTo(
+      size.width * 0.139, size.height * 0.855, // 3.886/28
+      size.width * 0.132, size.height * 0.803, // 3.682/28
+      size.width * 0.117, size.height * 0.7, // 3.274/28
+    );
+    playerPath.close();
+
+    // Кнопка воспроизведения
+    final playButtonPath = Path();
+    playButtonPath.addOval(Rect.fromCenter(
+      center: Offset(size.width * 0.5, size.height * 0.708), // 19.833/28
+      width: size.width * 0.125, // 3.5/28
+      height: size.width * 0.125,
+    ));
+
+    // Кнопка громкости
+    final volumePath = Path();
+    volumePath.moveTo(size.width * 0.5, size.height * 0.438); // 12.25/28
+    volumePath.lineTo(size.width * 0.5, size.height * 0.708); // 19.833/28
+    volumePath.lineTo(size.width * 0.625, size.height * 0.562); // 17.5/28
+    volumePath.lineTo(size.width * 0.625, size.height * 0.562); // 15.75/28
+
+    // Верхняя часть
+    final topPath = Path();
+    topPath.moveTo(size.width * 0.815, size.height * 0.292); // 22.822/28
+    topPath.cubicTo(
+      size.width * 0.827, size.height * 0.237, // 23.089/28
+      size.width * 0.783, size.height * 0.188, // 21.918/28
+      size.width * 0.727, size.height * 0.188, // 20.372/28
+    );
+    topPath.lineTo(size.width * 0.272, size.height * 0.188); // 7.628/28
+    topPath.cubicTo(
+      size.width * 0.217, size.height * 0.188, // 6.082/28
+      size.width * 0.175, size.height * 0.237, // 4.911/28
+      size.width * 0.185, size.height * 0.292, // 5.178/28
+    );
+
+    // Нижняя часть
+    final bottomPath = Path();
+    bottomPath.moveTo(size.width * 0.729, size.height * 0.188); // 20.417/28
+    bottomPath.cubicTo(
+      size.width * 0.73, size.height * 0.177, // 20.45/28
+      size.width * 0.73, size.height * 0.171, // 20.467/28
+      size.width * 0.73, size.height * 0.167, // 20.467/28
+    );
+    bottomPath.cubicTo(
+      size.width * 0.73, size.height * 0.124, // 20.469/28
+      size.width * 0.657, size.height * 0.088, // 19.57/28
+      size.width * 0.657, size.height * 0.084, // 18.382/28
+    );
+    bottomPath.cubicTo(
+      size.width * 0.657, size.height * 0.083, // 18.258/28
+      size.width * 0.657, size.height * 0.083, // 18.106/28
+      size.width * 0.657, size.height * 0.083, // 17.802/28
+    );
+    bottomPath.lineTo(size.width * 0.364, size.height * 0.083); // 10.198/28
+    bottomPath.cubicTo(
+      size.width * 0.354, size.height * 0.083, // 9.894/28
+      size.width * 0.348, size.height * 0.083, // 9.742/28
+      size.width * 0.343, size.height * 0.084, // 9.618/28
+    );
+    bottomPath.cubicTo(
+      size.width * 0.301, size.height * 0.088, // 8.43/28
+      size.width * 0.269, size.height * 0.124, // 7.531/28
+      size.width * 0.269, size.height * 0.167, // 7.533/28
+    );
+    bottomPath.cubicTo(
+      size.width * 0.269, size.height * 0.171, // 7.533/28
+      size.width * 0.27, size.height * 0.177, // 7.55/28
+      size.width * 0.271, size.height * 0.188, // 7.583/28
+    );
+
+    canvas.drawPath(playerPath, paint);
+    canvas.drawPath(playButtonPath, paint);
+    canvas.drawPath(volumePath, paint);
+    canvas.drawPath(topPath, paint);
+    canvas.drawPath(bottomPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+
