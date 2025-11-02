@@ -91,6 +91,7 @@ flutter:
     - assets/icons/
     - assets/icons/sleeplogo.png
     - assets/icons/loading_indicator.svg
+    - assets/icons/play_icon.svg
     - assets/animations/
     - assets/sounds/
     - assets/data/

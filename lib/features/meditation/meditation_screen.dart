@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
@@ -22,6 +23,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
   List<MeditationTrack> _relaxationTracks = [];
   List<MeditationTrack> _inspirationTracks = [];
   List<MeditationTrack> _loveTracks = [];
+  String? _activeTrackId; // ID активного трека
 
   @override
   void initState() {
@@ -56,8 +58,27 @@ class _MeditationScreenState extends State<MeditationScreen> {
           _relaxationTracks = relaxation;
           _inspirationTracks = inspiration;
           _loveTracks = love;
+          
+          // Инициализируем активный трек из данных (если есть трек с isPlaying: true)
+          _activeTrackId = allTracks.firstWhere(
+            (track) => track.isPlaying,
+            orElse: () => allTracks.isNotEmpty ? allTracks.first : MeditationTrack(
+              id: '',
+              title: '',
+              description: '',
+              level: '',
+              image: '',
+              video: '',
+              type: '',
+              category: '',
+              isPremium: false,
+              isPlaying: false,
+            ),
+          ).id;
+          if (_activeTrackId == '') _activeTrackId = null;
         });
         print('Состояние обновлено. Relaxation: ${_relaxationTracks.length}, Inspiration: ${_inspirationTracks.length}, Love: ${_loveTracks.length}');
+        print('Активный трек: $_activeTrackId');
       }
     } catch (e) {
       print('Ошибка загрузки треков: $e');
@@ -212,7 +233,20 @@ class _MeditationScreenState extends State<MeditationScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 15),
               itemCount: _relaxationTracks.length,
               itemBuilder: (context, index) {
-                return _buildTrackCard(_relaxationTracks[index], index == 0, isInspiration: false);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      // Если этот трек уже активен, деактивируем его
+                      if (_activeTrackId == _relaxationTracks[index].id) {
+                        _activeTrackId = null;
+                      } else {
+                        // Активируем этот трек и деактивируем остальные
+                        _activeTrackId = _relaxationTracks[index].id;
+                      }
+                    });
+                  },
+                  child: _buildTrackCard(_relaxationTracks[index], isInspiration: false),
+                );
               },
             ),
           ),
@@ -274,7 +308,20 @@ class _MeditationScreenState extends State<MeditationScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 15),
               itemCount: _inspirationTracks.length,
               itemBuilder: (context, index) {
-                return _buildTrackCard(_inspirationTracks[index], index == 0, isInspiration: true);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      // Если этот трек уже активен, деактивируем его
+                      if (_activeTrackId == _inspirationTracks[index].id) {
+                        _activeTrackId = null;
+                      } else {
+                        // Активируем этот трек и деактивируем остальные
+                        _activeTrackId = _inspirationTracks[index].id;
+                      }
+                    });
+                  },
+                  child: _buildTrackCard(_inspirationTracks[index], isInspiration: true),
+                );
               },
             ),
           ),
@@ -336,7 +383,20 @@ class _MeditationScreenState extends State<MeditationScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 15),
               itemCount: _loveTracks.length,
               itemBuilder: (context, index) {
-                return _buildTrackCard(_loveTracks[index], index == 0, isInspiration: false);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      // Если этот трек уже активен, деактивируем его
+                      if (_activeTrackId == _loveTracks[index].id) {
+                        _activeTrackId = null;
+                      } else {
+                        // Активируем этот трек и деактивируем остальные
+                        _activeTrackId = _loveTracks[index].id;
+                      }
+                    });
+                  },
+                  child: _buildTrackCard(_loveTracks[index], isInspiration: false),
+                );
               },
             ),
           ),
@@ -424,7 +484,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
     );
   }
 
-  Widget _buildTrackCard(MeditationTrack track, bool isActive, {bool isInspiration = false}) {
+  Widget _buildTrackCard(MeditationTrack track, {bool isInspiration = false}) {
     return Container(
       width: 150, // Чуть меньше ширина карточки
       margin: const EdgeInsets.only(right: 12),
@@ -524,28 +584,33 @@ class _MeditationScreenState extends State<MeditationScreen> {
                     ),
                   ),
                 
-                // Центральный overlay - пауза (для активных треков)
-                if (track.isPlaying)
-                  Center(
-                    child: ClipOval(
-                      child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF000000).withOpacity(0.15), // rgba(0, 0, 0, 0.15)
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.pause,
-                            size: 16,
-                            color: Colors.white,
-                          ),
+                // Центральный overlay - Play для неактивных, Pause для активных треков
+                Center(
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF000000).withOpacity(0.15), // rgba(0, 0, 0, 0.15)
+                          shape: BoxShape.circle,
                         ),
+                        child: _activeTrackId == track.id
+                            ? const Icon(
+                                Icons.pause,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                            : const Icon(
+                                Icons.play_arrow,
+                                size: 20,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
                   ),
+                ),
               ],
             ),
           ),
