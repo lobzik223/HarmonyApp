@@ -89,16 +89,16 @@ flutter:
     - assets/images/fon1.jpg
     - assets/images/window1.jpg
     - assets/icons/
+    - assets/icons/sleeplogo.png
+    - assets/icons/loading_indicator.svg
     - assets/animations/
     - assets/sounds/
     - assets/data/
+    - assets/data/meditation_tracks.json
 
-  # Кастомные шрифты (будут добавлены позже)
+  # Кастомные шрифты (будет добавлен позже, когда будет файл Klementina-Regular.ttf)
   # fonts:
-  #   - family: HarmonyApp
+  #   - family: Klementina
   #     fonts:
-  #       - asset: assets/fonts/HarmonyApp-Regular.ttf
-  #       - asset: assets/fonts/HarmonyApp-Bold.ttf
-  #         weight: 700
-  #       - asset: assets/fonts/HarmonyApp-Light.ttf
-  #         weight: 300
+  #       - asset: assets/fonts/Klementina-Regular.ttf
+  #         weight: 400

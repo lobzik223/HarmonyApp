@@ -1,0 +1,149 @@
+{
+  "tracks": [
+    {
+      "id": "1",
+      "title": "Lorem ipsum dolor sit amet consectetur",
+      "description": "i-медитация • Уровень В",
+      "level": "В",
+      "image": "assets/images/window1.jpg",
+      "video": "",
+      "type": "meditation",
+      "category": "relaxation",
+      "isPremium": false,
+      "isPlaying": true
+    }, 
+    {
+      "id": "2",
+      "title": "Lorem ipsum dolor sit",
+      "description": "i-медитация • Уровень А",
+      "level": "А",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "relaxation",
+      "isPremium": true,
+      "isPlaying": false
+    },
+    {
+      "id": "3",
+      "title": "Lorem ipsum dolor sit amet",
+      "description": "i-медитация • Уровень С",
+      "level": "С",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "relaxation",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "4",
+      "title": "Lorem ipsum dolor",
+      "description": "i-медитация • Уровень А",
+      "level": "А",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "relaxation",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "5",
+      "title": "Lorem ipsum dolor sit amet consectetur",
+      "description": "i-медитация • Уровень В",
+      "level": "В",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "inspiration",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "6",
+      "title": "Lorem ipsum dolor sit",
+      "description": "i-медитация • Уровень А",
+      "level": "А",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "inspiration",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "7",
+      "title": "Lorem ipsum dolor sit amet",
+      "description": "i-медитация • Уровень С",
+      "level": "С",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "inspiration",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "8",
+      "title": "Lorem ipsum dolor",
+      "description": "i-медитация • Уровень А",
+      "level": "А",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "inspiration",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "9",
+      "title": "Lorem ipsum dolor sit amet consectetur",
+      "description": "i-медитация • Уровень В",
+      "level": "В",
+      "image": "assets/images/window1.jpg",
+      "video": "",
+      "type": "meditation",
+      "category": "love",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "10",
+      "title": "Lorem ipsum dolor sit",
+      "description": "i-медитация • Уровень А",
+      "level": "А",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "love",
+      "isPremium": true,
+      "isPlaying": false
+    },
+    {
+      "id": "11",
+      "title": "Lorem ipsum dolor sit amet",
+      "description": "i-медитация • Уровень С",
+      "level": "С",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "love",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "12",
+      "title": "Lorem ipsum dolor",
+      "description": "i-медитация • Уровень А",
+      "level": "А",
+      "image": "",
+      "video": "",
+      "type": "meditation",
+      "category": "love",
+      "isPremium": false,
+      "isPlaying": false
+    }
+  ]
+}
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
+import '../../core/utils/navigation_utils.dart';
 
 /// Секция экрана "Выбор плана" (без изменения main.dart)
 /// - Фон: assets/images/fon1.jpg (cover)
@@ -45,7 +46,7 @@ class PlanSelectionSection extends StatelessWidget {
                   width: 80,
                   height: 80,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     child: Image.asset(
                       'assets/icons/harmonyicon.png',
                       fit: BoxFit.cover,
@@ -61,26 +62,13 @@ class PlanSelectionSection extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'ЧЕГО ТЫ ХОЧЕШЬ',
+                      'ЧЕГО ТЫ ХОЧЕШЬ ДОСТИЧЬ?',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.greatVibes(
-                        fontSize: 28, // Еще меньше для первой строки
+                      style: GoogleFonts.marckScript(
+                        fontSize: 44,
                         fontWeight: FontWeight.w400,
-                        height: 1.2,
-                        letterSpacing: 0.56, // 2% от 28px
-                        color: Colors.white,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                    const SizedBox(height: 8), // Небольшой отступ между строками
-                    Text(
-                      'ДОСТИЧЬ?',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.greatVibes(
-                        fontSize: 40, // Больше для второй строки
-                        fontWeight: FontWeight.w400,
-                        height: 1.2,
-                        letterSpacing: 0.8, // 2% от 40px
+                        height: 1.4, // 140%
+                        letterSpacing: 0.88, // 2% от 44px
                         color: Colors.white,
                         decoration: TextDecoration.none,
                       ),
@@ -122,9 +110,7 @@ class PlanSelectionSection extends StatelessWidget {
                     ),
                     onPressed: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
+                        noAnimationRoute(const HomeScreen()),
                       );
                     },
                     child: const Text(

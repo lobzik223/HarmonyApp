@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
+import 'core/utils/navigation_utils.dart';
+import 'features/loading/loading_screen.dart';
 import 'features/plan/plan_selection_section.dart';
+import 'features/meditation/meditation_screen.dart';
+import 'features/sleep/sleep_screen.dart';
+import 'features/tasks/tasks_screen.dart';
 
 void main() {
   runApp(const HarmonyApp());
@@ -19,11 +24,10 @@ class HarmonyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const PlanSelectionSection(),
+      home: const LoadingScreen(),
     );
   }
 }
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -134,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   // Иконки меню
                   Positioned(
-                    top: 10,
+                    top: 5,
                     left: 0,
                     right: 0,
                     child: Row(
@@ -143,11 +147,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Левая иконка - медитация
                           _buildMeditationIcon(),
                         // Вторая иконка - сон
-                        _buildSleepIcon(),
+                        _buildPlayerIcon(),
                         // Центральная кнопка с градиентом
                         _buildCentralButton(),
-                        // Четвертая иконка - плеер
-                        _buildPlayerIcon(),
+                        // Четвертая иконка - сон
+                        _buildSleepIcon(),
                         // Правая иконка - книга
                         _buildBookIcon(),
                       ],
@@ -163,36 +167,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMeditationIcon() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: Image.asset(
-          'assets/icons/profileicon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            print('Ошибка загрузки изображения: $error');
-            print('Путь: assets/icons/profileicon.png');
-            return Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.person,
-        color: Colors.white,
-                size: 20,
-              ),
-            );
-          },
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(const MeditationScreen()),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/icons/profileicon.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              print('Ошибка загрузки изображения: $error');
+              print('Путь: assets/icons/profileicon.png');
+              return Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.person,
+          color: Colors.white,
+                  size: 20,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -235,20 +246,42 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPlayerIcon() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: SizedBox(
-          width: 28,
-          height: 28,
-          child: CustomPaint(
-            size: const Size(28, 28),
-            painter: PlayerIconPainter(),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(const SleepScreen()),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/icons/sleeplogo.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              print('Ошибка загрузки изображения: $error');
+              print('Путь: assets/icons/sleeplogo.png');
+              return Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.bedtime,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -256,36 +289,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBookIcon() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: Image.asset(
-          'assets/icons/bookicon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            print('Ошибка загрузки изображения: $error');
-            print('Путь: assets/icons/bookicon.png');
-            return Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.book,
-                color: Colors.white,
-                size: 20,
-              ),
-            );
-          },
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(const TasksScreen()),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/icons/bookicon.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              print('Ошибка загрузки изображения: $error');
+              print('Путь: assets/icons/bookicon.png');
+              return Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.book,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -315,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
           width: 30,
           height: 30,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.zero,
             child: Image.asset(
               'assets/icons/harmonyicon.png',
               width: 30,
@@ -330,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 30,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.zero,
                   ),
                   child: const Icon(
                     Icons.image,
