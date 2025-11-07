@@ -88,14 +88,21 @@ flutter:
     - assets/images/
     - assets/images/fon1.jpg
     - assets/images/window1.jpg
+    - assets/images/registerfon.png
+    - assets/images/loading_screen.png
     - assets/icons/
     - assets/icons/sleeplogo.png
+    - assets/icons/selecticon.png
     - assets/icons/loading_indicator.svg
     - assets/icons/play_icon.svg
+    - assets/icons/pause_button.svg
+    - assets/icons/previous_button.svg
+    - assets/icons/next_button.svg
     - assets/animations/
     - assets/sounds/
     - assets/data/
     - assets/data/meditation_tracks.json
+    - assets/data/sleep_tracks.json
 
   # Кастомные шрифты (будет добавлен позже, когда будет файл Klementina-Regular.ttf)
   # fonts:

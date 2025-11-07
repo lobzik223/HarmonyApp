@@ -7,8 +7,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../shared/models/meditation_track.dart';
+import '../../shared/widgets/mini_player.dart';
 import '../sleep/sleep_screen.dart';
 import '../tasks/tasks_screen.dart';
+import '../player/player_screen.dart';
 
 /// Экран "Медитации"
 /// Фон с градиентами точно как в SVG
@@ -23,7 +25,11 @@ class _MeditationScreenState extends State<MeditationScreen> {
   List<MeditationTrack> _relaxationTracks = [];
   List<MeditationTrack> _inspirationTracks = [];
   List<MeditationTrack> _loveTracks = [];
+  List<MeditationTrack> _allTracks = []; // Все треки для поиска
   String? _activeTrackId; // ID активного трека
+  bool _isPlaying = false; // Состояние воспроизведения
+  double _progress = 0.0; // Прогресс воспроизведения (0.0 - 1.0)
+  String _currentTime = '10:56'; // Текущее время (заглушка)
 
   @override
   void initState() {
@@ -58,27 +64,13 @@ class _MeditationScreenState extends State<MeditationScreen> {
           _relaxationTracks = relaxation;
           _inspirationTracks = inspiration;
           _loveTracks = love;
+          _allTracks = allTracks; // Сохраняем все треки
           
-          // Инициализируем активный трек из данных (если есть трек с isPlaying: true)
-          _activeTrackId = allTracks.firstWhere(
-            (track) => track.isPlaying,
-            orElse: () => allTracks.isNotEmpty ? allTracks.first : MeditationTrack(
-              id: '',
-              title: '',
-              description: '',
-              level: '',
-              image: '',
-              video: '',
-              type: '',
-              category: '',
-              isPremium: false,
-              isPlaying: false,
-            ),
-          ).id;
-          if (_activeTrackId == '') _activeTrackId = null;
+          // Не устанавливаем активный трек при загрузке - только при нажатии на карточку
+          _activeTrackId = null;
+          _isPlaying = false;
         });
         print('Состояние обновлено. Relaxation: ${_relaxationTracks.length}, Inspiration: ${_inspirationTracks.length}, Love: ${_loveTracks.length}');
-        print('Активный трек: $_activeTrackId');
       }
     } catch (e) {
       print('Ошибка загрузки треков: $e');
@@ -95,6 +87,8 @@ class _MeditationScreenState extends State<MeditationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = (_activeTrackId != null ? 130.0 : 63.0); // Отступ снизу для меню + мини-плеер
+    
     return Scaffold(
       body: Stack(
         children: [
@@ -155,251 +149,310 @@ class _MeditationScreenState extends State<MeditationScreen> {
             ),
           ),
 
-          // Заголовок "МЕДИТАЦИИ" в верхней части
-          Positioned(
-            top: 62,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                'МЕДИТАЦИИ',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w400,
-                  height: 1.0, // 100%
-                  letterSpacing: 0.4, // 2% от 20px
-                  color: Color(0xFF202020), // rgba(32, 32, 32, 1)
-                  decoration: TextDecoration.none,
-                ),
+          // Скроллируемый контент
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: 62,
+                bottom: bottomPadding + 20, // Отступ снизу
               ),
-            ),
-          ),
-          
-          // Текст "ДЛЯ ОТДЫХА" внизу слева (без фона и рамки)
-          Positioned(
-            top: 110, // Позиционируем ниже заголовка
-            left: 15,
-            child: Text(
-              'ДЛЯ ОТДЫХА',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600, // Semibold (600)
-                height: 1.0, // 100%
-                letterSpacing: 0.28, // 2% от 14px
-                color: const Color(0xFF202020), // Black
-                decoration: TextDecoration.none,
-              ),
-            ),
-          ),
-          
-          // Текст "Все >" внизу справа
-          Positioned(
-            top: 110, // Позиционируем ниже заголовка
-            right: 15,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Все',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    height: 1.0,
-                    letterSpacing: 0.28,
-                    color: const Color(0xFF202020), // Black
-                    decoration: TextDecoration.none,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Заголовок "МЕДИТАЦИИ"
+                  Center(
+                    child: Text(
+                      'МЕДИТАЦИИ',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
+                        height: 1.0, // 100%
+                        letterSpacing: 0.4, // 2% от 20px
+                        color: Color(0xFF202020), // rgba(32, 32, 32, 1)
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 12,
-                  color: Color(0xFF202020),
-                ),
-              ],
+                  
+                  const SizedBox(height: 48),
+                  
+                  // Раздел "ДЛЯ ОТДЫХА"
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'ДЛЯ ОТДЫХА',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
+                            letterSpacing: 0.28,
+                            color: const Color(0xFF202020),
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Все',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                                letterSpacing: 0.28,
+                                color: const Color(0xFF202020),
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
+                              color: Color(0xFF202020),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 15),
+                  
+                  // Карточки треков для раздела "ДЛЯ ОТДЫХА"
+                  if (_relaxationTracks.isNotEmpty)
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        itemCount: _relaxationTracks.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_activeTrackId == _relaxationTracks[index].id) {
+                                  _isPlaying = !_isPlaying;
+                                } else {
+                                  _activeTrackId = _relaxationTracks[index].id;
+                                  _isPlaying = true;
+                                  _progress = 0.0;
+                                }
+                              });
+                            },
+                            child: _buildTrackCard(_relaxationTracks[index], isInspiration: false),
+                          );
+                        },
+                      ),
+                    ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Раздел "ДЛЯ ВДОХНОВЕНИЯ"
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'ДЛЯ ВДОХНОВЕНИЯ',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
+                            letterSpacing: 0.28,
+                            color: const Color(0xFF202020),
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Все',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                                letterSpacing: 0.28,
+                                color: const Color(0xFF202020),
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
+                              color: Color(0xFF202020),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 15),
+                  
+                  // Карточки треков для раздела "ДЛЯ ВДОХНОВЕНИЯ"
+                  if (_inspirationTracks.isNotEmpty)
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        itemCount: _inspirationTracks.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_activeTrackId == _inspirationTracks[index].id) {
+                                  _isPlaying = !_isPlaying;
+                                } else {
+                                  _activeTrackId = _inspirationTracks[index].id;
+                                  _isPlaying = true;
+                                  _progress = 0.0;
+                                }
+                              });
+                            },
+                            child: _buildTrackCard(_inspirationTracks[index], isInspiration: true),
+                          );
+                        },
+                      ),
+                    ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Раздел "ДЛЯ ПОИСКА ЛЮБВИ"
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'ДЛЯ ПОИСКА ЛЮБВИ',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
+                            letterSpacing: 0.28,
+                            color: const Color(0xFF202020),
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Все',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                                letterSpacing: 0.28,
+                                color: const Color(0xFF202020),
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
+                              color: Color(0xFF202020),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 15),
+                  
+                  // Карточки треков для раздела "ДЛЯ ПОИСКА ЛЮБВИ"
+                  if (_loveTracks.isNotEmpty)
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        itemCount: _loveTracks.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_activeTrackId == _loveTracks[index].id) {
+                                  _isPlaying = !_isPlaying;
+                                } else {
+                                  _activeTrackId = _loveTracks[index].id;
+                                  _isPlaying = true;
+                                  _progress = 0.0;
+                                }
+                              });
+                            },
+                            child: _buildTrackCard(_loveTracks[index], isInspiration: false),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           
-          // Карточки треков для раздела "ДЛЯ ОТДЫХА"
-          if (_relaxationTracks.isNotEmpty)
-          Positioned(
-            top: 145, // Позиционируем ниже текста "ДЛЯ ОТДЫХА"
-            left: 0,
-            right: 0,
-            height: 220, // Фиксированная высота для первого раздела
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              itemCount: _relaxationTracks.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
+          // Мини-плеер (отображается над нижним меню, если есть активный трек)
+          if (_activeTrackId != null)
+            MiniPlayer(
+              track: _allTracks.firstWhere(
+                (t) => t.id == _activeTrackId,
+                orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(
+                  id: '',
+                  title: '',
+                  description: '',
+                  level: '',
+                  image: '',
+                  video: '',
+                  type: '',
+                  category: '',
+                  isPremium: false,
+                  isPlaying: false,
+                ),
+              ),
+              isPlaying: _isPlaying,
+              progress: _progress,
+              currentTime: _currentTime,
+              onPlayPause: () {
+                setState(() {
+                  _isPlaying = !_isPlaying;
+                });
+              },
+              onPrevious: () {
+                if (_activeTrackId != null) {
+                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                  if (currentIndex > 0) {
                     setState(() {
-                      // Если этот трек уже активен, деактивируем его
-                      if (_activeTrackId == _relaxationTracks[index].id) {
-                        _activeTrackId = null;
-                      } else {
-                        // Активируем этот трек и деактивируем остальные
-                        _activeTrackId = _relaxationTracks[index].id;
-                      }
+                      _activeTrackId = _allTracks[currentIndex - 1].id;
+                      _isPlaying = true;
+                      _progress = 0.0;
                     });
-                  },
-                  child: _buildTrackCard(_relaxationTracks[index], isInspiration: false),
-                );
+                  }
+                }
+              },
+              onNext: () {
+                if (_activeTrackId != null) {
+                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                  if (currentIndex < _allTracks.length - 1) {
+                    setState(() {
+                      _activeTrackId = _allTracks[currentIndex + 1].id;
+                      _isPlaying = true;
+                      _progress = 0.0;
+                    });
+                  }
+                }
               },
             ),
-          ),
-          
-          // Текст "ДЛЯ ВДОХНОВЕНИЯ" ниже первого раздела
-          Positioned(
-            top: 380, // Позиционируем ниже карточек первого раздела
-            left: 15,
-            child: Text(
-              'ДЛЯ ВДОХНОВЕНИЯ',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600, // Semibold (600)
-                height: 1.0, // 100%
-                letterSpacing: 0.28, // 2% от 14px
-                color: const Color(0xFF202020), // Black
-                decoration: TextDecoration.none,
-              ),
-            ),
-          ),
-          
-          // Текст "Все >" для раздела "ДЛЯ ВДОХНОВЕНИЯ"
-          Positioned(
-            top: 380, // Позиционируем ниже карточек первого раздела
-            right: 15,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Все',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    height: 1.0,
-                    letterSpacing: 0.28,
-                    color: const Color(0xFF202020), // Black
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 12,
-                  color: Color(0xFF202020),
-                ),
-              ],
-            ),
-          ),
-          
-          // Карточки треков для раздела "ДЛЯ ВДОХНОВЕНИЯ"
-          if (_inspirationTracks.isNotEmpty)
-          Positioned(
-            top: 415, // Позиционируем ниже текста "ДЛЯ ВДОХНОВЕНИЯ"
-            left: 0,
-            right: 0,
-            height: 220, // Фиксированная высота для второго раздела
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              itemCount: _inspirationTracks.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      // Если этот трек уже активен, деактивируем его
-                      if (_activeTrackId == _inspirationTracks[index].id) {
-                        _activeTrackId = null;
-                      } else {
-                        // Активируем этот трек и деактивируем остальные
-                        _activeTrackId = _inspirationTracks[index].id;
-                      }
-                    });
-                  },
-                  child: _buildTrackCard(_inspirationTracks[index], isInspiration: true),
-                );
-              },
-            ),
-          ),
-          
-          // Текст "ДЛЯ ПОИСКА ЛЮБВИ" ниже второго раздела
-          Positioned(
-            top: 650, // Позиционируем ниже карточек второго раздела
-            left: 15,
-            child: Text(
-              'ДЛЯ ПОИСКА ЛЮБВИ',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600, // Semibold (600)
-                height: 1.0, // 100%
-                letterSpacing: 0.28, // 2% от 14px
-                color: const Color(0xFF202020), // Black
-                decoration: TextDecoration.none,
-              ),
-            ),
-          ),
-          
-          // Текст "Все >" для раздела "ДЛЯ ПОИСКА ЛЮБВИ"
-          Positioned(
-            top: 650, // Позиционируем ниже карточек второго раздела
-            right: 15,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Все',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    height: 1.0,
-                    letterSpacing: 0.28,
-                    color: const Color(0xFF202020), // Black
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 12,
-                  color: Color(0xFF202020),
-                ),
-              ],
-            ),
-          ),
-          
-          // Карточки треков для раздела "ДЛЯ ПОИСКА ЛЮБВИ"
-          if (_loveTracks.isNotEmpty)
-          Positioned(
-            top: 685, // Позиционируем ниже текста "ДЛЯ ПОИСКА ЛЮБВИ"
-            left: 0,
-            right: 0,
-            height: 220, // Фиксированная высота для третьего раздела
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              itemCount: _loveTracks.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      // Если этот трек уже активен, деактивируем его
-                      if (_activeTrackId == _loveTracks[index].id) {
-                        _activeTrackId = null;
-                      } else {
-                        // Активируем этот трек и деактивируем остальные
-                        _activeTrackId = _loveTracks[index].id;
-                      }
-                    });
-                  },
-                  child: _buildTrackCard(_loveTracks[index], isInspiration: false),
-                );
-              },
-            ),
-          ),
           
           // Нижнее меню поверх изображения
           Positioned(
@@ -596,7 +649,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                           color: const Color(0xFF000000).withOpacity(0.15), // rgba(0, 0, 0, 0.15)
                           shape: BoxShape.circle,
                         ),
-                        child: _activeTrackId == track.id
+                        child: (_activeTrackId == track.id && _isPlaying)
                             ? const Icon(
                                 Icons.pause,
                                 size: 16,
@@ -658,7 +711,9 @@ class _MeditationScreenState extends State<MeditationScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
-          child: Image.asset(
+          child: Transform.translate(
+            offset: const Offset(0, 4),
+            child: Image.asset(
             'assets/icons/profileicon.png',
             width: 28,
             height: 28,
@@ -680,6 +735,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                 ),
               );
             },
+            ),
           ),
         ),
       ),
@@ -687,36 +743,46 @@ class _MeditationScreenState extends State<MeditationScreen> {
   }
 
   Widget _buildSleepIcon() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: Image.asset(
-          'assets/icons/mediaicon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            print('Ошибка загрузки изображения: $error');
-            print('Путь: assets/icons/mediaicon.png');
-            return Container(
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(const PlayerScreen()),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Transform.translate(
+            offset: const Offset(0, 6),
+            child: Image.asset(
+              'assets/icons/mediaicon.png',
               width: 28,
               height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.music_note,
-                color: Colors.white,
-                size: 20,
-              ),
-            );
-          },
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                print('Ошибка загрузки изображения: $error');
+                print('Путь: assets/icons/mediaicon.png');
+                return Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.music_note,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -737,28 +803,31 @@ class _MeditationScreenState extends State<MeditationScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
-          child: Image.asset(
-            'assets/icons/sleeplogo.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/sleeplogo.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.bedtime,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
+          child: Transform.translate(
+            offset: const Offset(0, 6),
+            child: Image.asset(
+              'assets/icons/sleeplogo.png',
+              width: 28,
+              height: 28,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                print('Ошибка загрузки изображения: $error');
+                print('Путь: assets/icons/sleeplogo.png');
+                return Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.bedtime,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -780,28 +849,31 @@ class _MeditationScreenState extends State<MeditationScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
-          child: Image.asset(
-            'assets/icons/bookicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/bookicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.book,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
+          child: Transform.translate(
+            offset: const Offset(0, 6),
+            child: Image.asset(
+              'assets/icons/bookicon.png',
+              width: 28,
+              height: 28,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                print('Ошибка загрузки изображения: $error');
+                print('Путь: assets/icons/bookicon.png');
+                return Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.book,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -823,28 +895,31 @@ class _MeditationScreenState extends State<MeditationScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
-          child: Image.asset(
-            'assets/icons/harmonyicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/harmonyicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.image,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
+          child: Transform.translate(
+            offset: const Offset(0, 6),
+            child: Image.asset(
+              'assets/icons/harmonyicon.png',
+              width: 28,
+              height: 28,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                print('Ошибка загрузки изображения: $error');
+                print('Путь: assets/icons/harmonyicon.png');
+                return Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.image,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),

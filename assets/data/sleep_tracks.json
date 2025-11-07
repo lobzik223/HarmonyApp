@@ -1,0 +1,101 @@
+{
+  "tracks": [
+    {
+      "id": "sleep1",
+      "title": "Lorem ipsum dolor sit amet consectetur",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/window1.jpg",
+      "video": "",
+      "type": "sleep",
+      "category": "nightmare_exclusion",
+      "isPremium": false,
+      "isPlaying": true
+    },
+    {
+      "id": "sleep2",
+      "title": "Lorem ipsum dolor sit",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/id2.jpg",
+      "video": "",
+      "type": "sleep",
+      "category": "nightmare_exclusion",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "sleep3",
+      "title": "Lorem ipsum dolor sit amet",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/id3.png",
+      "video": "",
+      "type": "sleep",
+      "category": "nightmare_exclusion",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "sleep4",
+      "title": "Lorem ipsum dolor",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/fon1.jpg",
+      "video": "",
+      "type": "sleep",
+      "category": "nightmare_exclusion",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "sleep5",
+      "title": "Lorem ipsum dolor sit amet consectetur",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/window1.jpg",
+      "video": "",
+      "type": "sleep",
+      "category": "other_direction",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "sleep6",
+      "title": "Lorem ipsum dolor sit",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/id2.jpg",
+      "video": "",
+      "type": "sleep",
+      "category": "other_direction",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "sleep7",
+      "title": "Lorem ipsum dolor sit amet",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/id3.png",
+      "video": "",
+      "type": "sleep",
+      "category": "other_direction",
+      "isPremium": false,
+      "isPlaying": false
+    },
+    {
+      "id": "sleep8",
+      "title": "Lorem ipsum dolor",
+      "description": "2:23:65",
+      "level": "",
+      "image": "assets/images/fon1.jpg",
+      "video": "",
+      "type": "sleep",
+      "category": "other_direction",
+      "isPremium": false,
+      "isPlaying": false
+    }
+  ]
+}
+

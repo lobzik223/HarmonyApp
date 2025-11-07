@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/navigation_utils.dart';
-import '../plan/plan_selection_section.dart';
+import '../registration/registration_screen.dart';
 import 'dart:ui' as ui;
 
 /// Экран загрузки
@@ -59,21 +59,23 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     return Scaffold(
       body: Stack(
         children: [
-          // Основной фон с градиентом
+          // Белый фон под изображением
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF3D41E9), // Верх — насыщенный синий с фиолетовым оттенком
-                  Color(0xFF318CF1), // Средний переход в голубой (50%)
-                  Color(0xFF00D4E3), // Низ — чистая бирюза
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ),
+            color: Colors.white,
+          ),
+          // Фоновое изображение
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/loading_screen.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                print('Ошибка загрузки фона: $error');
+                return Container(
+                  color: Colors.white,
+                );
+              },
             ),
           ),
           
@@ -151,7 +153,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pushReplacement(
-                    noAnimationRoute(const PlanSelectionSection()),
+                    noAnimationRoute(const RegistrationScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(

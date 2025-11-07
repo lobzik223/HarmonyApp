@@ -55,25 +55,18 @@ class PlanSelectionSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 60),
-              // Заголовок
+              // Изображение заголовка вместо текста
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'ЧЕГО ТЫ ХОЧЕШЬ ДОСТИЧЬ?',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.marckScript(
-                        fontSize: 44,
-                        fontWeight: FontWeight.w400,
-                        height: 1.4, // 140%
-                        letterSpacing: 0.88, // 2% от 44px
-                        color: Colors.white,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  ],
+                child: Center(
+                  child: Image.asset(
+                    'assets/icons/selecticon.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('Ошибка загрузки изображения: $error');
+                      return const SizedBox.shrink();
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 80),

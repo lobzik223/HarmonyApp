@@ -1,17 +1,90 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
+import 'dart:ui' as ui;
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../shared/models/meditation_track.dart';
+import '../../shared/widgets/mini_player.dart';
 import '../meditation/meditation_screen.dart';
 import '../tasks/tasks_screen.dart';
+import '../player/player_screen.dart';
 
 /// Экран "Сон"
 /// Фон с градиентами точно как в SVG
-class SleepScreen extends StatelessWidget {
+class SleepScreen extends StatefulWidget {
   const SleepScreen({super.key});
 
   @override
+  State<SleepScreen> createState() => _SleepScreenState();
+}
+
+class _SleepScreenState extends State<SleepScreen> {
+  List<MeditationTrack> _nightmareExclusionTracks = [];
+  List<MeditationTrack> _otherDirectionTracks = [];
+  List<MeditationTrack> _allTracks = [];
+  String? _activeTrackId;
+  bool _isPlaying = false;
+  double _progress = 0.0;
+  String _currentTime = '2:23:65';
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTracks();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadTracks() async {
+    try {
+      final String response = await rootBundle.loadString('assets/data/sleep_tracks.json');
+      final data = json.decode(response) as Map<String, dynamic>;
+      final List<dynamic> tracksJson = data['tracks'] as List<dynamic>;
+      final allTracks = tracksJson
+          .map((trackJson) => MeditationTrack.fromJson(trackJson as Map<String, dynamic>))
+          .toList();
+      
+      final nightmareExclusion = allTracks.where((track) => track.category == 'nightmare_exclusion').toList();
+      final otherDirection = allTracks.where((track) => track.category == 'other_direction').toList();
+      
+      print('=== ЗАГРУЗКА ТРЕКОВ СНА ===');
+      print('Всего треков загружено: ${allTracks.length}');
+      print('Треков для исключения кошмаров: ${nightmareExclusion.length}');
+      print('Треков для другого направления: ${otherDirection.length}');
+      
+      if (mounted) {
+        setState(() {
+          _nightmareExclusionTracks = nightmareExclusion;
+          _otherDirectionTracks = otherDirection;
+          _allTracks = allTracks;
+          
+          // Не устанавливаем активный трек при загрузке - только при нажатии на карточку
+          _activeTrackId = null;
+          _isPlaying = false;
+        });
+      }
+    } catch (e) {
+      print('Ошибка загрузки треков сна: $e');
+      if (mounted) {
+        setState(() {
+          _nightmareExclusionTracks = [];
+          _otherDirectionTracks = [];
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bottomPadding = (_activeTrackId != null ? 130.0 : 63.0); // Отступ снизу для меню + мини-плеер
+    
     return Scaffold(
       body: Stack(
         children: [
@@ -35,13 +108,12 @@ class SleepScreen extends StatelessWidget {
           ),
           
           // Бирюзовый блик справа-ниже
-          // cx="92%" cy="70%" r="55%" в SVG
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  center: const Alignment(0.84, 0.4), // 92% x, 70% y (от центра)
-                  radius: 0.55, // 55% от размера
+                  center: const Alignment(0.84, 0.4),
+                  radius: 0.55,
                   colors: [
                     const Color(0xFF6AF4E8).withOpacity(0.50),
                     const Color(0xFF6AF4E8).withOpacity(0.10),
@@ -53,26 +125,242 @@ class SleepScreen extends StatelessWidget {
             ),
           ),
 
-          // Заголовок "СОН" в верхней части
-          Positioned(
-            top: 62,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                'СОН',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w400,
-                  height: 1.0, // 100%
-                  letterSpacing: 0.4, // 2% от 20px
-                  color: Colors.white, // rgba(255, 255, 255, 1)
-                  decoration: TextDecoration.none,
+          // Скроллируемый контент
+          Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            interactive: true,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: 62,
+                  bottom: bottomPadding + 20, // Отступ снизу
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                  // Заголовок "СОН"
+                  Center(
+                    child: Text(
+                      'СОН',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
+                        height: 1.0,
+                        letterSpacing: 0.4,
+                        color: Colors.white,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 48),
+                  
+                  // Раздел "ИСКЛЮЧЕНИЕ КОШМАРОВ"
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'ИСКЛЮЧЕНИЕ КОШМАРОВ',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
+                            letterSpacing: 0.28,
+                            color: Colors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Все',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                                letterSpacing: 0.28,
+                                color: Colors.white,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 15),
+                  
+                  // Карточки треков для раздела "ИСКЛЮЧЕНИЕ КОШМАРОВ"
+                  if (_nightmareExclusionTracks.isNotEmpty)
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        itemCount: _nightmareExclusionTracks.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_activeTrackId == _nightmareExclusionTracks[index].id) {
+                                  _isPlaying = !_isPlaying;
+                                } else {
+                                  _activeTrackId = _nightmareExclusionTracks[index].id;
+                                  _isPlaying = true;
+                                  _progress = 0.0;
+                                }
+                              });
+                            },
+                            child: _buildTrackCard(_nightmareExclusionTracks[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Раздел "ДРУГОЕ НАПРАВЛЕНИЕ"
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'ДРУГОЕ НАПРАВЛЕНИЕ',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
+                            letterSpacing: 0.28,
+                            color: Colors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Все',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                height: 1.0,
+                                letterSpacing: 0.28,
+                                color: Colors.white,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 15),
+                  
+                  // Карточки треков для раздела "ДРУГОЕ НАПРАВЛЕНИЕ"
+                  if (_otherDirectionTracks.isNotEmpty)
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        itemCount: _otherDirectionTracks.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_activeTrackId == _otherDirectionTracks[index].id) {
+                                  _isPlaying = !_isPlaying;
+                                } else {
+                                  _activeTrackId = _otherDirectionTracks[index].id;
+                                  _isPlaying = true;
+                                  _progress = 0.0;
+                                }
+                              });
+                            },
+                            child: _buildTrackCard(_otherDirectionTracks[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
+
+          // Мини-плеер
+          if (_activeTrackId != null)
+            MiniPlayer(
+              track: _allTracks.firstWhere(
+                (t) => t.id == _activeTrackId,
+                orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(
+                  id: '',
+                  title: '',
+                  description: '',
+                  level: '',
+                  image: '',
+                  video: '',
+                  type: '',
+                  category: '',
+                  isPremium: false,
+                  isPlaying: false,
+                ),
+              ),
+              isPlaying: _isPlaying,
+              progress: _progress,
+              currentTime: _currentTime,
+              onPlayPause: () {
+                setState(() {
+                  _isPlaying = !_isPlaying;
+                });
+              },
+              onPrevious: () {
+                if (_activeTrackId != null) {
+                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                  if (currentIndex > 0) {
+                    setState(() {
+                      _activeTrackId = _allTracks[currentIndex - 1].id;
+                      _isPlaying = true;
+                      _progress = 0.0;
+                    });
+                  }
+                }
+              },
+              onNext: () {
+                if (_activeTrackId != null) {
+                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                  if (currentIndex < _allTracks.length - 1) {
+                    setState(() {
+                      _activeTrackId = _allTracks[currentIndex + 1].id;
+                      _isPlaying = true;
+                      _progress = 0.0;
+                    });
+                  }
+                }
+              },
+            ),
           
           // Нижнее меню поверх изображения
           Positioned(
@@ -83,11 +371,10 @@ class SleepScreen extends StatelessWidget {
               height: 63,
               child: Stack(
                 children: [
-                  // Фоновое размытие с точной формой SVG
                   ClipPath(
                     clipper: BottomMenuClipperSleep(),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                      filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                       child: Container(
                         width: double.infinity,
                         height: 63,
@@ -101,7 +388,6 @@ class SleepScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Иконки меню
                   Positioned(
                     top: 5,
                     left: 0,
@@ -109,21 +395,142 @@ class SleepScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Левая иконка - медитация
                           _buildMeditationIcon(context),
-                        // Вторая иконка - сон (выбрана) с кругом
                         _buildSleepIconWithCircle(context),
-                        // Центральная кнопка (обычная иконка)
                         _buildCentralButtonAsIcon(context),
-                        // Четвертая иконка - сон
-                        _buildSleepIconSimple(),
-                        // Правая иконка - книга
+                        _buildSleepIconSimple(context),
                         _buildBookIcon(context),
                       ],
                     ),
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackCard(MeditationTrack track) {
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(right: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 145,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.grey[300],
+            ),
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: track.image.isNotEmpty
+                      ? Image.asset(
+                          track.image,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              color: Colors.grey[300],
+                            );
+                          },
+                        )
+                      : Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: Icon(
+                              Icons.image,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                ),
+                
+                // Иконка луны со звездами в левом верхнем углу
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.bedtime,
+                      size: 16,
+                      color: Color(0xFF202020),
+                    ),
+                  ),
+                ),
+                
+                // Центральный overlay - Play/Pause
+                Center(
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF000000).withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: (_activeTrackId == track.id && _isPlaying)
+                            ? const Icon(
+                                Icons.pause,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                            : const Icon(
+                                Icons.play_arrow,
+                                size: 20,
+                                color: Colors.white,
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          
+          // Название трека (белый цвет)
+          Text(
+            track.title,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              height: 1.2,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 3),
+          
+          // Длительность (белый цвет)
+          Text(
+            track.description,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
+              height: 1.2,
             ),
           ),
         ],
@@ -152,8 +559,6 @@ class SleepScreen extends StatelessWidget {
             height: 28,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/profileicon.png');
               return Container(
                 width: 28,
                 height: 28,
@@ -176,12 +581,11 @@ class SleepScreen extends StatelessWidget {
 
   Widget _buildSleepIconWithCircle(BuildContext context) {
     return Transform.translate(
-      offset: const Offset(-5, 0), // Смещение влево (меньше для смещения вправо)
+      offset: const Offset(-5, 0),
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          // Круг под иконкой (центрирован)
           Container(
             width: 46,
             height: 46,
@@ -194,15 +598,12 @@ class SleepScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(23),
             ),
           ),
-          // Иконка сна (центрирована)
           Image.asset(
             'assets/icons/sleeplogo.png',
             width: 28,
             height: 28,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/sleeplogo.png');
               return Container(
                 width: 28,
                 height: 28,
@@ -223,37 +624,42 @@ class SleepScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSleepIconSimple() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: Image.asset(
-          'assets/icons/mediaicon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            print('Ошибка загрузки изображения: $error');
-            print('Путь: assets/icons/mediaicon.png');
-            return Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.music_note,
-                color: Colors.white,
-                size: 20,
-              ),
-            );
-          },
+  Widget _buildSleepIconSimple(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(const PlayerScreen()),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/icons/mediaicon.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.music_note,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -280,8 +686,6 @@ class SleepScreen extends StatelessWidget {
             height: 28,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/bookicon.png');
               return Container(
                 width: 28,
                 height: 28,
@@ -323,8 +727,6 @@ class SleepScreen extends StatelessWidget {
             height: 28,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/harmonyicon.png');
               return Container(
                 width: 28,
                 height: 28,
@@ -347,7 +749,6 @@ class SleepScreen extends StatelessWidget {
 }
 
 // Clipper для формы меню с вырезом под второй иконкой (сон)
-// path d="M113 59C129.016 59 142 46.0163 142 30C142 29.7537 141.997 29.5082 141.991 29.2634C141.791 21.2528 148.805 6.51139 156.817 6.66878C167.516 6.87897 177.862 6.99998 187.5 6.99998C241.379 6.99998 317.344 3.21868 353.825 1.2144C365.334 0.582054 375 9.73658 375 21.2635V71C375 75.4183 371.418 79 367 79H8C3.58172 79 0 75.4183 0 71V21.2635C0 9.73658 9.66565 0.582053 21.1753 1.2144C33.8484 1.91067 51.2864 2.82139 70.9083 3.71354C78.9144 4.07756 84.8804 19.2678 84.129 27.2469C84.0436 28.1531 84 29.0714 84 30C84 46.0163 96.9837 59 113 59Z"
 class BottomMenuClipperSleep extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -355,103 +756,70 @@ class BottomMenuClipperSleep extends CustomClipper<Path> {
     final scaleX = size.width / 375;
     final scaleY = size.height / 63;
     
-    // M113 59
     path.moveTo(113 * scaleX, 59 * scaleY);
-    
-    // C129.016 59 142 46.0163 142 30
     path.cubicTo(
       129.016 * scaleX, 59 * scaleY,
       142 * scaleX, 46.0163 * scaleY,
       142 * scaleX, 30 * scaleY,
     );
-    
-    // C142 29.7537 141.997 29.5082 141.991 29.2634
     path.cubicTo(
       142 * scaleX, 29.7537 * scaleY,
       141.997 * scaleX, 29.5082 * scaleY,
       141.991 * scaleX, 29.2634 * scaleY,
     );
-    
-    // C141.791 21.2528 148.805 6.51139 156.817 6.66878
     path.cubicTo(
       141.791 * scaleX, 21.2528 * scaleY,
       148.805 * scaleX, 6.51139 * scaleY,
       156.817 * scaleX, 6.66878 * scaleY,
     );
-    
-    // C167.516 6.87897 177.862 6.99998 187.5 6.99998
     path.cubicTo(
       167.516 * scaleX, 6.87897 * scaleY,
       177.862 * scaleX, 6.99998 * scaleY,
       187.5 * scaleX, 6.99998 * scaleY,
     );
-    
-    // C241.379 6.99998 317.344 3.21868 353.825 1.2144
     path.cubicTo(
       241.379 * scaleX, 6.99998 * scaleY,
       317.344 * scaleX, 3.21868 * scaleY,
       353.825 * scaleX, 1.2144 * scaleY,
     );
-    
-    // C365.334 0.582054 375 9.73658 375 21.2635
     path.cubicTo(
       365.334 * scaleX, 0.582054 * scaleY,
       375 * scaleX, 9.73658 * scaleY,
       375 * scaleX, 21.2635 * scaleY,
     );
-    
-    // V71 (вертикальная линия до y=71)
     path.lineTo(375 * scaleX, 71 * scaleY);
-    
-    // C375 75.4183 371.418 79 367 79
     path.cubicTo(
       375 * scaleX, 75.4183 * scaleY,
       371.418 * scaleX, 79 * scaleY,
       367 * scaleX, 79 * scaleY,
     );
-    
-    // H8 (горизонтальная линия до x=8)
     path.lineTo(8 * scaleX, 79 * scaleY);
-    
-    // C3.58172 79 0 75.4183 0 71
     path.cubicTo(
       3.58172 * scaleX, 79 * scaleY,
       0, 75.4183 * scaleY,
       0, 71 * scaleY,
     );
-    
-    // V21.2635 (вертикальная линия до y=21.2635)
     path.lineTo(0, 21.2635 * scaleY);
-    
-    // C0 9.73658 9.66565 0.582053 21.1753 1.2144
     path.cubicTo(
       0, 9.73658 * scaleY,
       9.66565 * scaleX, 0.582053 * scaleY,
       21.1753 * scaleX, 1.2144 * scaleY,
     );
-    
-    // C33.8484 1.91067 51.2864 2.82139 70.9083 3.71354
     path.cubicTo(
       33.8484 * scaleX, 1.91067 * scaleY,
       51.2864 * scaleX, 2.82139 * scaleY,
       70.9083 * scaleX, 3.71354 * scaleY,
     );
-    
-    // C78.9144 4.07756 84.8804 19.2678 84.129 27.2469
     path.cubicTo(
       78.9144 * scaleX, 4.07756 * scaleY,
       84.8804 * scaleX, 19.2678 * scaleY,
       84.129 * scaleX, 27.2469 * scaleY,
     );
-    
-    // C84.0436 28.1531 84 29.0714 84 30
     path.cubicTo(
       84.0436 * scaleX, 28.1531 * scaleY,
       84 * scaleX, 29.0714 * scaleY,
       84 * scaleX, 30 * scaleY,
     );
-    
-    // C84 46.0163 96.9837 59 113 59
     path.cubicTo(
       84 * scaleX, 46.0163 * scaleY,
       96.9837 * scaleX, 59 * scaleY,
@@ -466,4 +834,3 @@ class BottomMenuClipperSleep extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
-

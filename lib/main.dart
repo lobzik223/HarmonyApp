@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/utils/navigation_utils.dart';
 import 'features/loading/loading_screen.dart';
+import 'features/registration/registration_screen.dart';
 import 'features/plan/plan_selection_section.dart';
 import 'features/meditation/meditation_screen.dart';
 import 'features/sleep/sleep_screen.dart';
 import 'features/tasks/tasks_screen.dart';
+import 'features/player/player_screen.dart';
 
 void main() {
   runApp(const HarmonyApp());
@@ -37,6 +40,63 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Список фонов для переключения
+  final List<String> _backgrounds = [
+    'assets/images/window1.jpg',
+    'assets/images/fon1.jpg',
+    'assets/images/id2.jpg',
+    'assets/images/id3.png',
+  ];
+  
+  int _currentBackgroundIndex = 0; // Начинаем с window1.jpg
+  bool _isLoading = true; // Флаг загрузки сохраненного фона
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedBackground();
+  }
+
+  // Загружаем сохраненный фон
+  Future<void> _loadSavedBackground() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedIndex = prefs.getInt('home_background_index');
+      if (savedIndex != null && savedIndex >= 0 && savedIndex < _backgrounds.length) {
+        setState(() {
+          _currentBackgroundIndex = savedIndex;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Ошибка загрузки сохраненного фона: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Сохраняем выбранный фон
+  Future<void> _saveBackground(int index) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('home_background_index', index);
+    } catch (e) {
+      print('Ошибка сохранения фона: $e');
+    }
+  }
+
+  void _switchBackground() {
+    setState(() {
+      _currentBackgroundIndex = (_currentBackgroundIndex + 1) % _backgrounds.length;
+    });
+    // Сохраняем выбранный фон
+    _saveBackground(_currentBackgroundIndex);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,48 +107,51 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/window1.jpg'),
+                image: AssetImage(_backgrounds[_currentBackgroundIndex]),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          // Верхняя иконка с кнопкой (слева)
+          // Верхняя иконка с кнопкой (слева) - переключает фон
           Positioned(
             top: 62,
             left: 16,
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
-                child: Image.asset(
-                  'assets/icons/butonicon.png',
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    print('Ошибка загрузки изображения: $error');
-                    print('Путь: assets/icons/butonicon.png');
-                    return Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: const Icon(
-                        Icons.settings,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    );
-                  },
+            child: GestureDetector(
+              onTap: _switchBackground,
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: Image.asset(
+                    'assets/icons/butonicon.png',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('Ошибка загрузки изображения: $error');
+                      print('Путь: assets/icons/butonicon.png');
+                      return Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: const Icon(
+                          Icons.settings,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -210,36 +273,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSleepIcon() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: Image.asset(
-          'assets/icons/mediaicon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            print('Ошибка загрузки изображения: $error');
-            print('Путь: assets/icons/mediaicon.png');
-            return Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.music_note,
-                color: Colors.white,
-                size: 20,
-              ),
-            );
-          },
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(const PlayerScreen()),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/icons/mediaicon.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              print('Ошибка загрузки изображения: $error');
+              print('Путь: assets/icons/mediaicon.png');
+              return Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.music_note,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

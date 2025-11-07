@@ -1,14 +1,113 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:intl/intl.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../meditation/meditation_screen.dart';
 import '../sleep/sleep_screen.dart';
+import '../player/player_screen.dart';
+import 'wishes_screen.dart';
+
+/// Модель карточки дня для календаря
+class DayCard {
+  final String dayAbbreviation; // ПН, ВТ, СР...
+  final String date; // 01.08
+  final bool isCompleted; // Выполнено ли задание
+
+  DayCard({
+    required this.dayAbbreviation,
+    required this.date,
+    this.isCompleted = false,
+  });
+}
 
 /// Экран "Задания"
 /// Фон: assets/images/fon1.jpg
-class TasksScreen extends StatelessWidget {
+class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
+
+  @override
+  State<TasksScreen> createState() => _TasksScreenState();
+}
+
+class _TasksScreenState extends State<TasksScreen> {
+  // Генерируем карточки дней для календаря с реальными датами
+  List<DayCard> _generateDayCards() {
+    final cards = <DayCard>[];
+    
+    // Получаем текущую дату
+    final now = DateTime.now();
+    
+    // Начинаем с первого дня текущего месяца
+    final startDate = DateTime(now.year, now.month, 1);
+    
+    // Находим первый понедельник месяца (или первый день, если месяц начинается с понедельника)
+    // В Dart: 1 = понедельник, 7 = воскресенье
+    int firstDayOfWeek = startDate.weekday; // 1-7, где 1 = понедельник
+    DateTime currentDate = startDate.subtract(Duration(days: firstDayOfWeek - 1));
+    
+    // Генерируем 10 недель (70 дней) - два блока по 5 недель
+    for (int week = 0; week < 10; week++) {
+      for (int dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+        // Получаем день недели (1 = понедельник, 7 = воскресенье)
+        final weekday = currentDate.weekday;
+        
+        // Получаем сокращение дня недели на русском
+        final dayAbbreviation = _getDayAbbreviation(weekday);
+        
+        // Форматируем дату в формат DD.MM
+        final day = currentDate.day.toString().padLeft(2, '0');
+        final month = currentDate.month.toString().padLeft(2, '0');
+        final dateStr = '$day.$month';
+        
+        // Некоторые дни помечаем как выполненные (пример)
+        final cardIndex = week * 7 + dayOfWeek;
+        final isCompleted = cardIndex % 3 == 0 || cardIndex % 5 == 0;
+        
+        cards.add(DayCard(
+          dayAbbreviation: dayAbbreviation,
+          date: dateStr,
+          isCompleted: isCompleted,
+        ));
+        
+        // Переходим к следующему дню
+        currentDate = currentDate.add(const Duration(days: 1));
+      }
+    }
+    
+    return cards;
+  }
+  
+  // Получаем сокращение дня недели на русском
+  String _getDayAbbreviation(int weekday) {
+    // weekday: 1 = понедельник, 2 = вторник, ..., 7 = воскресенье
+    switch (weekday) {
+      case 1:
+        return 'ПН';
+      case 2:
+        return 'ВТ';
+      case 3:
+        return 'СР';
+      case 4:
+        return 'ЧТ';
+      case 5:
+        return 'ПТ';
+      case 6:
+        return 'СБ';
+      case 7:
+        return 'ВС';
+      default:
+        return 'ПН';
+    }
+  }
+
+  final List<DayCard> _dayCards = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _dayCards.addAll(_generateDayCards());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +131,7 @@ class TasksScreen extends StatelessWidget {
             top: 62,
             left: 16,
             child: Text(
-              'ГРАФИК ЗАДАНИЙ',
+              'ТРЕКЕР ЗАДАНИЙ',
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w400,
@@ -48,25 +147,45 @@ class TasksScreen extends StatelessWidget {
           Positioned(
             top: 60,
             right: 16,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  'Желания',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white,
-                    decoration: TextDecoration.none,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  noAnimationRoute(const WishesScreen()),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'Желания',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
-                ),
-                SizedBox(width: 4),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 12,
-                  color: Colors.white,
-                ),
-              ],
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 12,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Календарь с карточками дней
+          Positioned(
+            top: 120,
+            left: 0,
+            right: 0,
+            bottom: 62,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildCalendarGrid(),
             ),
           ),
           
@@ -108,7 +227,7 @@ class TasksScreen extends StatelessWidget {
                         // Центральная кнопка (обычная иконка)
                         _buildCentralButtonAsIcon(context),
                         // Четвертая иконка - сон
-                        _buildSleepIconSimple(),
+                        _buildSleepIconSimple(context),
                         // Правая иконка - книга (выбрана) с кругом
                         _buildBookIconWithCircle(context),
                       ],
@@ -119,6 +238,154 @@ class TasksScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCalendarGrid() {
+    final rows = <Widget>[];
+    
+    // Разбиваем карточки на ряды по 7 штук
+    for (int i = 0; i < _dayCards.length; i += 7) {
+      final rowCards = _dayCards.sublist(
+        i,
+        i + 7 > _dayCards.length ? _dayCards.length : i + 7,
+      );
+      
+      rows.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: rowCards.map((card) => Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 1.5),
+              child: _buildDayCard(card),
+            ),
+          )).toList(),
+        ),
+      );
+      
+      // Добавляем разделительную линию только между двумя блоками (после 5-й недели)
+      // После 5-й недели (i = 28 означает, что мы только что добавили 5-й ряд)
+      if (i == 28 && i + 7 < _dayCards.length) {
+        rows.add(_buildSeparatorLine());
+      }
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: rows,
+    );
+  }
+
+  Widget _buildDayCard(DayCard card) {
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Stack(
+        children: [
+          // Фон карточки с blur эффектом
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: Container(
+                width: double.infinity,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // День недели (ПН, ВТ, СР...)
+                    Text(
+                      card.dayAbbreviation,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    // Дата (01.08)
+                    Text(
+                      card.date,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Галочка для выполненных заданий
+          if (card.isCompleted)
+            Positioned(
+              top: 2,
+              right: 2,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Размытый зеленый круг (glow эффект)
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00FF1A),
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          color: Colors.transparent,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Зеленая галочка
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF04FF5C),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      size: 7,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSeparatorLine() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+          child: Container(
+            width: double.infinity,
+            height: 1,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -209,37 +476,44 @@ class TasksScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSleepIconSimple() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: Image.asset(
-          'assets/icons/mediaicon.png',
-          width: 28,
-          height: 28,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            print('Ошибка загрузки изображения: $error');
-            print('Путь: assets/icons/mediaicon.png');
-            return Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.music_note,
-                color: Colors.white,
-                size: 20,
-              ),
-            );
-          },
+  Widget _buildSleepIconSimple(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(const PlayerScreen()),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/icons/mediaicon.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              print('Ошибка загрузки изображения: $error');
+              print('Путь: assets/icons/mediaicon.png');
+              return Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.music_note,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
