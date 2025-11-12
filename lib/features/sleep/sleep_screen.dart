@@ -581,40 +581,40 @@ class _SleepScreenState extends State<SleepScreen> {
 
   Widget _buildSleepIconWithCircle(BuildContext context) {
     return Transform.translate(
-      offset: const Offset(-5, 0),
+      offset: const Offset(-8, -0),
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
-              borderRadius: BorderRadius.circular(23),
+              borderRadius: BorderRadius.circular(26),
             ),
           ),
           Image.asset(
             'assets/icons/sleeplogo.png',
-            width: 28,
-            height: 28,
+            width: 32,
+            height: 32,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   Icons.bedtime,
                   color: Colors.white,
-                  size: 20,
+                  size: 22,
                 ),
               );
             },

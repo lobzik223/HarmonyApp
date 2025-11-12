@@ -60,14 +60,11 @@ class _TasksScreenState extends State<TasksScreen> {
         final month = currentDate.month.toString().padLeft(2, '0');
         final dateStr = '$day.$month';
         
-        // Некоторые дни помечаем как выполненные (пример)
-        final cardIndex = week * 7 + dayOfWeek;
-        final isCompleted = cardIndex % 3 == 0 || cardIndex % 5 == 0;
-        
+        // По умолчанию все карточки не выполнены
         cards.add(DayCard(
           dayAbbreviation: dayAbbreviation,
           date: dateStr,
-          isCompleted: isCompleted,
+          isCompleted: false,
         ));
         
         // Переходим к следующему дню
@@ -255,12 +252,15 @@ class _TasksScreenState extends State<TasksScreen> {
       rows.add(
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: rowCards.map((card) => Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1.5),
-              child: _buildDayCard(card),
-            ),
-          )).toList(),
+          children: rowCards.asMap().entries.map((entry) {
+            final cardIndex = i + entry.key;
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                child: _buildDayCard(_dayCards[cardIndex], cardIndex),
+              ),
+            );
+          }).toList(),
         ),
       );
       
@@ -277,97 +277,126 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  Widget _buildDayCard(DayCard card) {
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Stack(
-        children: [
-          // Фон карточки с blur эффектом
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-              child: Container(
-                width: double.infinity,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // День недели (ПН, ВТ, СР...)
-                    Text(
-                      card.dayAbbreviation,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        height: 1.0,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    // Дата (01.08)
-                    Text(
-                      card.date,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white,
-                        height: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
-          // Галочка для выполненных заданий
-          if (card.isCompleted)
-            Positioned(
-              top: 2,
-              right: 2,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Размытый зеленый круг (glow эффект)
-                  Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00FF1A),
-                      shape: BoxShape.circle,
-                    ),
-                    child: ClipOval(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          color: Colors.transparent,
+  Widget _buildDayCard(DayCard card, int cardIndex) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _dayCards[cardIndex] = DayCard(
+            dayAbbreviation: card.dayAbbreviation,
+            date: card.date,
+            isCompleted: !card.isCompleted,
+          );
+        });
+      },
+      child: Container(
+        height: 40,
+        margin: const EdgeInsets.only(bottom: 8),
+        child: Stack(
+          children: [
+            // Фон карточки с blur эффектом
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                child: Container(
+                  width: double.infinity,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 14),
+                      // День недели (ПН, ВТ, СР...)
+                      Text(
+                        card.dayAbbreviation,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          height: 1.0,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 3),
+                      // Дата (01.08)
+                      Text(
+                        card.date,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
                   ),
-                  // Зеленая галочка
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF04FF5C),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      size: 7,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-        ],
+            
+            // Значок в центре сверху (всегда видимый, зеленый только если активен)
+            Positioned(
+              top: 2,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Размытый зеленый круг (glow эффект) - только если активен
+                      if (card.isCompleted)
+                        Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00FF1A),
+                            shape: BoxShape.circle,
+                          ),
+                          child: ClipOval(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                color: Colors.transparent,
+                              ),
+                            ),
+                          ),
+                        ),
+                      // Круг с галочкой (зеленый если активен, пустой с обводкой если нет)
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: card.isCompleted 
+                              ? const Color(0xFF04FF5C)
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                          border: card.isCompleted 
+                              ? null 
+                              : Border.all(
+                                  color: Colors.white.withOpacity(0.7),
+                                  width: 1.5,
+                                ),
+                        ),
+                        child: card.isCompleted
+                            ? const Icon(
+                                Icons.check,
+                                size: 7,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -521,39 +550,39 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Widget _buildBookIconWithCircle(BuildContext context) {
     return Transform.translate(
-      offset: const Offset(12, -2), // Смещение вправо и вверх (немного влево)
+      offset: const Offset(16, -2), // Смещение вправо и вверх
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
           // Круг под иконкой (центрирован)
           Container(
-            width: 46,
-            height: 46,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
-              borderRadius: BorderRadius.circular(23),
+              borderRadius: BorderRadius.circular(25),
             ),
           ),
           // Иконка книги (центрирована)
           Image.asset(
             'assets/icons/bookicon.png',
-            width: 28,
-            height: 28,
+            width: 30,
+            height: 30,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               print('Ошибка загрузки изображения: $error');
               print('Путь: assets/icons/bookicon.png');
               return Container(
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Icon(
                   Icons.book,

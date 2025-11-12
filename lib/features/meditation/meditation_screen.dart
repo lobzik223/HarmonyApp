@@ -491,24 +491,24 @@ class _MeditationScreenState extends State<MeditationScreen> {
                         children: [
                           // Левая иконка - медитация (выбрана) с кругом
                           Transform.translate(
-                            offset: const Offset(-10, 0), // Смещение влево
+                            offset: const Offset(-12, -2), // Смещение влево и вверх
                             child: Stack(
                               clipBehavior: Clip.none,
                               alignment: Alignment.center,
                               children: [
                                 // Круг под иконкой
                                 Positioned(
-                                  top: 2, // 7 - 5 = 2 относительно top: 5 у Row
+                                  top: 0, // Поднят выше
                                   child: Container(
-                                    width: 46,
-                                    height: 46,
+                                    width: 52,
+                                    height: 52,
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
                                         colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
                                         begin: Alignment.centerLeft,
                                         end: Alignment.centerRight,
                                       ),
-                                      borderRadius: BorderRadius.circular(23),
+                                      borderRadius: BorderRadius.circular(26),
                                     ),
                                   ),
                                 ),
@@ -715,23 +715,23 @@ class _MeditationScreenState extends State<MeditationScreen> {
             offset: const Offset(0, 4),
             child: Image.asset(
             'assets/icons/profileicon.png',
-            width: 28,
-            height: 28,
+            width: isSelected ? 32 : 28,
+            height: isSelected ? 32 : 28,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               print('Ошибка загрузки изображения: $error');
               print('Путь: assets/icons/profileicon.png');
               return Container(
-                width: 28,
-                height: 28,
+                width: isSelected ? 32 : 28,
+                height: isSelected ? 32 : 28,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(isSelected ? 16 : 14),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person,
                   color: Colors.white,
-                  size: 20,
+                  size: isSelected ? 22 : 20,
                 ),
               );
             },

@@ -103,6 +103,7 @@ flutter:
     - assets/data/
     - assets/data/meditation_tracks.json
     - assets/data/sleep_tracks.json
+    - assets/data/player_tracks.json
 
   # Кастомные шрифты (будет добавлен позже, когда будет файл Klementina-Regular.ttf)
   # fonts:
