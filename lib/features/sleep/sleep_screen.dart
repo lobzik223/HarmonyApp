@@ -7,6 +7,7 @@ import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../shared/models/meditation_track.dart';
 import '../../shared/widgets/mini_player.dart';
+import '../../shared/widgets/harmony_bottom_nav.dart';
 import '../meditation/meditation_screen.dart';
 import '../tasks/tasks_screen.dart';
 import '../player/player_screen.dart';
@@ -81,9 +82,36 @@ class _SleepScreenState extends State<SleepScreen> {
     }
   }
 
+  void _handleBottomNavTap(HarmonyTab tab) {
+    switch (tab) {
+      case HarmonyTab.meditation:
+        Navigator.of(context).push(
+          noAnimationRoute(const MeditationScreen()),
+        );
+        break;
+      case HarmonyTab.sleep:
+        return;
+      case HarmonyTab.home:
+        Navigator.of(context).pushReplacement(
+          noAnimationRoute(const HomeScreen()),
+        );
+        break;
+      case HarmonyTab.player:
+        Navigator.of(context).push(
+          noAnimationRoute(const PlayerScreen()),
+        );
+        break;
+      case HarmonyTab.tasks:
+        Navigator.of(context).push(
+          noAnimationRoute(const TasksScreen()),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = (_activeTrackId != null ? 130.0 : 63.0); // Отступ снизу для меню + мини-плеер
+    final bottomPadding = (_activeTrackId != null ? 160.0 : 100.0);
     
     return Scaffold(
       body: Stack(
@@ -367,44 +395,10 @@ class _SleepScreenState extends State<SleepScreen> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              height: 63,
-              child: Stack(
-                children: [
-                  ClipPath(
-                    clipper: BottomMenuClipperSleep(),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                      child: Container(
-                        width: double.infinity,
-                        height: 63,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 5,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildMeditationIcon(context),
-                        _buildSleepIconWithCircle(context),
-                        _buildCentralButtonAsIcon(context),
-                        _buildSleepIconSimple(context),
-                        _buildBookIcon(context),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: HarmonyBottomNav(
+              activeTab: HarmonyTab.sleep,
+              onTabSelected: _handleBottomNavTap,
+              leadingEdgeCutoutTab: HarmonyTab.sleep,
             ),
           ),
         ],
@@ -538,299 +532,13 @@ class _SleepScreenState extends State<SleepScreen> {
     );
   }
 
-  Widget _buildMeditationIcon(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const MeditationScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/profileicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
+  
 
-  Widget _buildSleepIconWithCircle(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(-8, -0),
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(26),
-            ),
-          ),
-          Image.asset(
-            'assets/icons/sleeplogo.png',
-            width: 32,
-            height: 32,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.bedtime,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  
 
-  Widget _buildSleepIconSimple(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const PlayerScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/mediaicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.music_note,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
+  
 
-  Widget _buildBookIcon(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const TasksScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/bookicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.book,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
+  
 
-  Widget _buildCentralButtonAsIcon(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).pushReplacement(
-          noAnimationRoute(const HomeScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/harmonyicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.image,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-// Clipper для формы меню с вырезом под второй иконкой (сон)
-class BottomMenuClipperSleep extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    final scaleX = size.width / 375;
-    final scaleY = size.height / 63;
-    
-    path.moveTo(113 * scaleX, 59 * scaleY);
-    path.cubicTo(
-      129.016 * scaleX, 59 * scaleY,
-      142 * scaleX, 46.0163 * scaleY,
-      142 * scaleX, 30 * scaleY,
-    );
-    path.cubicTo(
-      142 * scaleX, 29.7537 * scaleY,
-      141.997 * scaleX, 29.5082 * scaleY,
-      141.991 * scaleX, 29.2634 * scaleY,
-    );
-    path.cubicTo(
-      141.791 * scaleX, 21.2528 * scaleY,
-      148.805 * scaleX, 6.51139 * scaleY,
-      156.817 * scaleX, 6.66878 * scaleY,
-    );
-    path.cubicTo(
-      167.516 * scaleX, 6.87897 * scaleY,
-      177.862 * scaleX, 6.99998 * scaleY,
-      187.5 * scaleX, 6.99998 * scaleY,
-    );
-    path.cubicTo(
-      241.379 * scaleX, 6.99998 * scaleY,
-      317.344 * scaleX, 3.21868 * scaleY,
-      353.825 * scaleX, 1.2144 * scaleY,
-    );
-    path.cubicTo(
-      365.334 * scaleX, 0.582054 * scaleY,
-      375 * scaleX, 9.73658 * scaleY,
-      375 * scaleX, 21.2635 * scaleY,
-    );
-    path.lineTo(375 * scaleX, 71 * scaleY);
-    path.cubicTo(
-      375 * scaleX, 75.4183 * scaleY,
-      371.418 * scaleX, 79 * scaleY,
-      367 * scaleX, 79 * scaleY,
-    );
-    path.lineTo(8 * scaleX, 79 * scaleY);
-    path.cubicTo(
-      3.58172 * scaleX, 79 * scaleY,
-      0, 75.4183 * scaleY,
-      0, 71 * scaleY,
-    );
-    path.lineTo(0, 21.2635 * scaleY);
-    path.cubicTo(
-      0, 9.73658 * scaleY,
-      9.66565 * scaleX, 0.582053 * scaleY,
-      21.1753 * scaleX, 1.2144 * scaleY,
-    );
-    path.cubicTo(
-      33.8484 * scaleX, 1.91067 * scaleY,
-      51.2864 * scaleX, 2.82139 * scaleY,
-      70.9083 * scaleX, 3.71354 * scaleY,
-    );
-    path.cubicTo(
-      78.9144 * scaleX, 4.07756 * scaleY,
-      84.8804 * scaleX, 19.2678 * scaleY,
-      84.129 * scaleX, 27.2469 * scaleY,
-    );
-    path.cubicTo(
-      84.0436 * scaleX, 28.1531 * scaleY,
-      84 * scaleX, 29.0714 * scaleY,
-      84 * scaleX, 30 * scaleY,
-    );
-    path.cubicTo(
-      84 * scaleX, 46.0163 * scaleY,
-      96.9837 * scaleX, 59 * scaleY,
-      113 * scaleX, 59 * scaleY,
-    );
-    
-    path.close();
-    
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}

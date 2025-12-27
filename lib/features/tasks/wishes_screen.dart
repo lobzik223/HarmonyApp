@@ -2,10 +2,48 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../shared/widgets/harmony_bottom_nav.dart';
 import '../meditation/meditation_screen.dart';
 import '../sleep/sleep_screen.dart';
 import '../player/player_screen.dart';
 import 'tasks_screen.dart';
+
+/// Модель желания
+class Wish {
+  final String id;
+  final String category;
+  final String title;
+  final String description;
+  final bool isFulfilled;
+  final bool isFavorite;
+
+  Wish({
+    required this.id,
+    required this.category,
+    required this.title,
+    required this.description,
+    this.isFulfilled = false,
+    this.isFavorite = false,
+  });
+
+  Wish copyWith({
+    String? id,
+    String? category,
+    String? title,
+    String? description,
+    bool? isFulfilled,
+    bool? isFavorite,
+  }) {
+    return Wish(
+      id: id ?? this.id,
+      category: category ?? this.category,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      isFulfilled: isFulfilled ?? this.isFulfilled,
+      isFavorite: isFavorite ?? this.isFavorite,
+    );
+  }
+}
 
 /// Экран "Желания"
 /// Фон: assets/images/fon1.jpg
@@ -18,6 +56,107 @@ class WishesScreen extends StatefulWidget {
 
 class _WishesScreenState extends State<WishesScreen> {
   int _selectedSegment = 0; // 0 = Текущие, 1 = Исполненные
+  
+  // Список желаний
+  List<Wish> _wishes = [
+    Wish(
+      id: '1',
+      category: 'Название категории',
+      title: 'Заголовк желания, который может уйти на 2',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
+      isFulfilled: false,
+      isFavorite: false,
+    ),
+    Wish(
+      id: '2',
+      category: 'Название категории',
+      title: 'Заголовк желания',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
+      isFulfilled: false,
+      isFavorite: true,
+    ),
+    Wish(
+      id: '3',
+      category: 'Название категории',
+      title: 'Заголовк желания, который может уйти на 2',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
+      isFulfilled: false,
+      isFavorite: false,
+    ),
+    Wish(
+      id: '4',
+      category: 'Название категории',
+      title: 'Заголовк желания',
+      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
+      isFulfilled: true,
+      isFavorite: false,
+    ),
+  ];
+  
+  // Получаем отфильтрованные желания
+  List<Wish> get _filteredWishes {
+    if (_selectedSegment == 0) {
+      return _wishes.where((wish) => !wish.isFulfilled).toList();
+    } else {
+      return _wishes.where((wish) => wish.isFulfilled).toList();
+    }
+  }
+  
+  // Добавить новое желание
+  void _addWish() {
+    showDialog(
+      context: context,
+      builder: (context) => _AddWishDialog(
+        onAdd: (wish) {
+          setState(() {
+            _wishes.add(wish);
+          });
+        },
+      ),
+    );
+  }
+  
+  // Переключить избранное
+  void _toggleFavorite(String id) {
+    setState(() {
+      final index = _wishes.indexWhere((wish) => wish.id == id);
+      if (index != -1) {
+        _wishes[index] = _wishes[index].copyWith(
+          isFavorite: !_wishes[index].isFavorite,
+        );
+      }
+    });
+  }
+
+  void _handleBottomNavTap(HarmonyTab tab) {
+    switch (tab) {
+      case HarmonyTab.meditation:
+        Navigator.of(context).push(
+          noAnimationRoute(const MeditationScreen()),
+        );
+        break;
+      case HarmonyTab.sleep:
+        Navigator.of(context).push(
+          noAnimationRoute(const SleepScreen()),
+        );
+        break;
+      case HarmonyTab.home:
+        Navigator.of(context).pushReplacement(
+          noAnimationRoute(const HomeScreen()),
+        );
+        break;
+      case HarmonyTab.player:
+        Navigator.of(context).push(
+          noAnimationRoute(const PlayerScreen()),
+        );
+        break;
+      case HarmonyTab.tasks:
+        Navigator.of(context).pushReplacement(
+          noAnimationRoute(const TasksScreen()),
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,52 +236,56 @@ class _WishesScreenState extends State<WishesScreen> {
             child: _buildSegmentedControl(),
           ),
 
+          // Список карточек желаний
+          Positioned(
+            top: 160,
+            left: 0,
+            right: 0,
+            bottom: 100,
+            child: _buildWishesList(),
+          ),
+
+          // Кнопка добавления нового желания
+          Positioned(
+            bottom: 120,
+            right: 20,
+            child: GestureDetector(
+              onTap: _addWish,
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: ClipOval(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // Нижнее меню поверх изображения
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              height: 62,
-              child: Stack(
-                children: [
-                  // Фоновое размытие с точной формой SVG
-                  ClipPath(
-                    clipper: BottomMenuClipperTasks(),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                      child: Container(
-                        width: double.infinity,
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Иконки меню
-                  Positioned(
-                    top: 5,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Левая иконка - медитация
-                          _buildMeditationIcon(context),
-                        // Вторая иконка - сон
-                        _buildSleepIcon(context),
-                        // Центральная кнопка (обычная иконка)
-                        _buildCentralButtonAsIcon(context),
-                        // Четвертая иконка - сон
-                        _buildSleepIconSimple(context),
-                        // Правая иконка - книга (выбрана) с кругом
-                        _buildBookIconWithCircle(context),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: HarmonyBottomNav(
+              activeTab: HarmonyTab.tasks,
+              onTabSelected: _handleBottomNavTap,
             ),
           ),
         ],
@@ -238,229 +381,104 @@ class _WishesScreenState extends State<WishesScreen> {
       ),
     );
   }
-
-  Widget _buildMeditationIcon(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const MeditationScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/profileicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/profileicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
+  
+  Widget _buildWishesList() {
+    final filteredWishes = _filteredWishes;
+    
+    if (filteredWishes.isEmpty) {
+      return Center(
+        child: Text(
+          _selectedSegment == 0 ? 'Нет текущих желаний' : 'Нет исполненных желаний',
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.white70,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSleepIcon(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const SleepScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/sleeplogo.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/sleeplogo.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.bedtime,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSleepIconSimple(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const PlayerScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/mediaicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/mediaicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.music_note,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBookIconWithCircle(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(12, -2), // Смещение вправо и вверх (немного влево)
-      child: GestureDetector(
-        onTap: () {
-          Navigator.of(context).push(
-            noAnimationRoute(const TasksScreen()),
+      );
+    }
+    
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        children: filteredWishes.map((wish) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildWishCard(wish),
           );
-        },
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            // Круг под иконкой (центрирован)
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(23),
-              ),
-            ),
-            // Иконка книги (центрирована)
-            Image.asset(
-              'assets/icons/bookicon.png',
-              width: 28,
-              height: 28,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                print('Ошибка загрузки изображения: $error');
-                print('Путь: assets/icons/bookicon.png');
-                return Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.book,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+        }).toList(),
       ),
     );
   }
-
-  Widget _buildCentralButtonAsIcon(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).pushReplacement(
-          noAnimationRoute(const HomeScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/harmonyicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/harmonyicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.image,
+  
+  Widget _buildWishCard(Wish wish) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Верхняя строка: категория и иконка сердца
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Название категории
+                  Text(
+                    wish.category,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white70,
+                      height: 1.0,
+                    ),
+                  ),
+                  // Иконка сердца
+                  GestureDetector(
+                    onTap: () => _toggleFavorite(wish.id),
+                    child: Icon(
+                      wish.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      size: 20,
+                      color: wish.isFavorite ? Colors.red : Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Заголовок желания
+              Text(
+                wish.title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   color: Colors.white,
-                  size: 20,
+                  height: 1.2,
                 ),
-              );
-            },
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              // Описание
+              Text(
+                wish.description,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white70,
+                  height: 1.4,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -468,79 +486,157 @@ class _WishesScreenState extends State<WishesScreen> {
   }
 }
 
-// Clipper для формы меню (копия из tasks_screen.dart)
-class BottomMenuClipperTasks extends CustomClipper<Path> {
+// Диалог для добавления нового желания
+class _AddWishDialog extends StatefulWidget {
+  final Function(Wish) onAdd;
+
+  const _AddWishDialog({required this.onAdd});
+
   @override
-  Path getClip(Size size) {
-    final path = Path();
-    final scaleX = size.width / 375;
-    final scaleY = size.height / 62;
-    
-    path.moveTo(338 * scaleX, 57.8165 * scaleY);
-    path.cubicTo(
-      354.016 * scaleX, 57.8165 * scaleY,
-      367 * scaleX, 44.8328 * scaleY,
-      367 * scaleX, 28.8165 * scaleY,
+  State<_AddWishDialog> createState() => _AddWishDialogState();
+}
+
+class _AddWishDialogState extends State<_AddWishDialog> {
+  final _categoryController = TextEditingController(text: 'Название категории');
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    _categoryController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  void _saveWish() {
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Введите заголовок желания')),
+      );
+      return;
+    }
+
+    final wish = Wish(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      category: _categoryController.text.trim().isEmpty 
+          ? 'Название категории' 
+          : _categoryController.text.trim(),
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim().isEmpty
+          ? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.'
+          : _descriptionController.text.trim(),
     );
-    path.cubicTo(
-      367 * scaleX, 18.3358 * scaleY,
-      361.44 * scaleX, 9.15365 * scaleY,
-      353.109 * scaleX, 4.05853 * scaleY,
-    );
-    path.cubicTo(
-      351.816 * scaleX, 3.26764 * scaleY,
-      352.311 * scaleX, 0.114056 * scaleY,
-      353.825 * scaleX, 0.0308982 * scaleY,
-    );
-    path.cubicTo(
-      365.334 * scaleX, -0.601449 * scaleY,
-      375 * scaleX, 8.55308 * scaleY,
-      375 * scaleX, 20.08 * scaleY,
-    );
-    path.lineTo(375 * scaleX, 69.8165 * scaleY);
-    path.cubicTo(
-      375 * scaleX, 74.2348 * scaleY,
-      371.418 * scaleX, 77.8165 * scaleY,
-      367 * scaleX, 77.8165 * scaleY,
-    );
-    path.lineTo(8 * scaleX, 77.8165 * scaleY);
-    path.cubicTo(
-      3.58172 * scaleX, 77.8165 * scaleY,
-      0, 74.2348 * scaleY,
-      0, 69.8165 * scaleY,
-    );
-    path.lineTo(0, 20.08 * scaleY);
-    path.cubicTo(
-      0, 8.55308 * scaleY,
-      9.66565 * scaleX, -0.601449 * scaleY,
-      21.1753 * scaleX, 0.0308974 * scaleY,
-    );
-    path.cubicTo(
-      57.656 * scaleX, 2.03518 * scaleY,
-      133.621 * scaleX, 5.81648 * scaleY,
-      187.5 * scaleX, 5.81648 * scaleY,
-    );
-    path.cubicTo(
-      219.096 * scaleX, 5.81648 * scaleY,
-      258.286 * scaleX, 4.51614 * scaleY,
-      292.656 * scaleX, 3.03637 * scaleY,
-    );
-    path.cubicTo(
-      298.492 * scaleX, 2.7851 * scaleY,
-      309 * scaleX, 22.9752 * scaleY,
-      309 * scaleX, 28.8165 * scaleY,
-    );
-    path.cubicTo(
-      309 * scaleX, 44.8328 * scaleY,
-      321.984 * scaleX, 57.8165 * scaleY,
-      338 * scaleX, 57.8165 * scaleY,
-    );
-    path.close();
-    
-    return path;
+
+    widget.onAdd(wish);
+    Navigator.of(context).pop();
   }
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Новое желание',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _categoryController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Категория',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white54),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _titleController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Заголовок',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white54),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _descriptionController,
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Описание (необязательно)',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white54),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Отмена',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _saveWish,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                      ),
+                      child: const Text('Добавить'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
-

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -11,6 +13,47 @@ import 'features/meditation/meditation_screen.dart';
 import 'features/sleep/sleep_screen.dart';
 import 'features/tasks/tasks_screen.dart';
 import 'features/player/player_screen.dart';
+import 'features/profile/profile_screen.dart';
+import 'shared/widgets/harmony_bottom_nav.dart';
+
+/// Модель карточки для главного экрана
+class HomeCard {
+  final String id;
+  final String image;
+  final String title;
+  final String? subtitle;
+  final String type;
+  final String? date;
+  final String? duration;
+  final String? views;
+  final bool isLocked;
+
+  HomeCard({
+    required this.id,
+    required this.image,
+    required this.title,
+    this.subtitle,
+    required this.type,
+    this.date,
+    this.duration,
+    this.views,
+    this.isLocked = false,
+  });
+
+  factory HomeCard.fromJson(Map<String, dynamic> json) {
+    return HomeCard(
+      id: json['id'] as String,
+      image: json['image'] as String,
+      title: json['title'] as String,
+      subtitle: json['subtitle'] as String?,
+      type: json['type'] as String,
+      date: json['date'] as String?,
+      duration: json['duration'] as String?,
+      views: json['views'] as String?,
+      isLocked: json['isLocked'] as bool? ?? false,
+    );
+  }
+}
 
 void main() {
   runApp(const HarmonyApp());
@@ -50,11 +93,109 @@ class _HomeScreenState extends State<HomeScreen> {
   
   int _currentBackgroundIndex = 0; // Начинаем с window1.jpg
   bool _isLoading = true; // Флаг загрузки сохраненного фона
+  
+  // Данные карточек
+  HomeCard? _featuredCard;
+  List<HomeCard> _recommendedCards = [];
+  List<HomeCard> _emergencyCards = [];
 
   @override
   void initState() {
     super.initState();
     _loadSavedBackground();
+    _loadHomeCards();
+  }
+  
+  // Загружаем карточки из JSON
+  Future<void> _loadHomeCards() async {
+    try {
+      final String response = await rootBundle.loadString('assets/data/home_cards.json');
+      final data = json.decode(response) as Map<String, dynamic>;
+      
+      // Загружаем главную карточку
+      if (data['featured'] != null) {
+        _featuredCard = HomeCard.fromJson(data['featured'] as Map<String, dynamic>);
+      }
+      
+      // Загружаем рекомендованные
+      if (data['recommended'] != null) {
+        final recommendedList = data['recommended'] as List<dynamic>;
+        _recommendedCards = recommendedList
+            .map((item) => HomeCard.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      
+      // Загружаем экстренные
+      if (data['emergency'] != null) {
+        final emergencyList = data['emergency'] as List<dynamic>;
+        _emergencyCards = emergencyList
+            .map((item) => HomeCard.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Ошибка загрузки карточек: $e');
+      // Устанавливаем дефолтные данные если файл не загрузился
+      _setDefaultCards();
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+  
+  // Устанавливаем дефолтные карточки
+  void _setDefaultCards() {
+    _featuredCard = HomeCard(
+      id: 'featured1',
+      image: 'assets/images/window1.jpg',
+      date: '5 декабря',
+      title: 'Путь вдоха',
+      subtitle: 'Китайская мудрость о долголетии',
+      type: 'Занятие',
+      duration: '8 мин',
+      isLocked: false,
+    );
+    
+    _recommendedCards = [
+      HomeCard(
+        id: 'rec1',
+        image: 'assets/images/id2.jpg',
+        title: 'Исполнение желаний',
+        type: 'Курс',
+        views: '12,3 тыс',
+        isLocked: false,
+      ),
+      HomeCard(
+        id: 'rec2',
+        image: 'assets/images/id3.png',
+        title: 'Колесо жизненного баланса',
+        type: 'Курс',
+        views: '26,3 тыс',
+        isLocked: false,
+      ),
+    ];
+    
+    _emergencyCards = [
+      HomeCard(
+        id: 'emergency1',
+        image: 'assets/images/fon1.jpg',
+        title: 'Снятие стресса',
+        type: 'Медитация',
+        duration: '5 мин',
+        isLocked: false,
+      ),
+      HomeCard(
+        id: 'emergency2',
+        image: 'assets/images/window1.jpg',
+        title: 'Быстрое успокоение',
+        type: 'Дыхание',
+        duration: '3 мин',
+        isLocked: false,
+      ),
+    ];
   }
 
   // Загружаем сохраненный фон
@@ -96,6 +237,34 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     // Сохраняем выбранный фон
     _saveBackground(_currentBackgroundIndex);
+  }
+
+  void _handleBottomNavTap(HarmonyTab tab) {
+    switch (tab) {
+      case HarmonyTab.meditation:
+        Navigator.of(context).push(
+          noAnimationRoute(const MeditationScreen()),
+        );
+        break;
+      case HarmonyTab.sleep:
+        Navigator.of(context).push(
+          noAnimationRoute(const SleepScreen()),
+        );
+        break;
+      case HarmonyTab.home:
+        // Уже на главном экране
+        break;
+      case HarmonyTab.player:
+        Navigator.of(context).push(
+          noAnimationRoute(const PlayerScreen()),
+        );
+        break;
+      case HarmonyTab.tasks:
+        Navigator.of(context).push(
+          noAnimationRoute(const TasksScreen()),
+        );
+        break;
+    }
   }
 
   @override
@@ -160,385 +329,404 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             top: 62,
             right: 16,
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
-                child: CustomPaint(
-                  size: const Size(50, 50),
-                  painter: UserTopIconPainter(),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.of(context).push(
+                  noAnimationRoute(const ProfileScreen()),
+                );
+              },
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: CustomPaint(
+                    size: const Size(50, 50),
+                    painter: UserTopIconPainter(),
+                  ),
                 ),
               ),
             ),
           ),
+          
+          // Скроллируемый контент с карточками
+          Positioned(
+            top: 130,
+            left: 0,
+            right: 0,
+            bottom: 100,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Главная карточка
+                  if (_featuredCard != null) _buildFeaturedCard(_featuredCard!),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Раздел "Рекомендовано для вас"
+                  if (_recommendedCards.isNotEmpty) ...[
+                    const Text(
+                      'Рекомендовано для вас',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildRecommendedCards(),
+                    const SizedBox(height: 32),
+                  ],
+                  
+                  // Раздел "Экстренные ситуации"
+                  if (_emergencyCards.isNotEmpty) ...[
+                    const Text(
+                      'Экстренные ситуации',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildEmergencyCards(),
+                    const SizedBox(height: 32),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          
           // Нижнее меню поверх изображения
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              height: 62,
-              child: Stack(
+            child: HarmonyBottomNav(
+              activeTab: HarmonyTab.home,
+              onTabSelected: _handleBottomNavTap,
+              isHomeStyle: true,
+              highlightHomeIdle: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Главная большая карточка
+  Widget _buildFeaturedCard(HomeCard card) {
+    return GestureDetector(
+      onTap: () {
+        // Можно добавить навигацию на детальную страницу
+        print('Нажата карточка: ${card.title}');
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          height: 280,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+          children: [
+            // Изображение
+            Positioned.fill(
+              child: Image.asset(
+                card.image,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[800],
+                    child: const Center(
+                      child: Icon(Icons.image, color: Colors.white54, size: 48),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Градиент снизу
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 120,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Дата в правом верхнем углу
+            if (card.date != null)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    card.date!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            // Длительность/замок в левом нижнем углу изображения
+            Positioned(
+              bottom: 100,
+              left: 16,
+              child: Row(
                 children: [
-                  // Фоновое размытие с точной формой SVG
-                  ClipPath(
-                    clipper: BottomMenuClipper(),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                      child: Container(
-                        width: double.infinity,
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
-                        ),
+                  if (card.isLocked)
+                    const Icon(
+                      Icons.lock,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  if (card.isLocked) const SizedBox(width: 4),
+                  if (card.duration != null)
+                    Text(
+                      card.duration!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
-                  // Иконки меню
-                  Positioned(
-                    top: 5,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Левая иконка - медитация
-                          _buildMeditationIcon(),
-                        // Вторая иконка - сон
-                        _buildPlayerIcon(),
-                        // Центральная кнопка с градиентом
-                        _buildCentralButton(),
-                        // Четвертая иконка - сон
-                        _buildSleepIcon(),
-                        // Правая иконка - книга
-                        _buildBookIcon(),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMeditationIcon() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const MeditationScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/profileicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/profileicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
+            // Текст внизу
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      card.title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (card.subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        card.subtitle!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white70,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      card.type,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.person,
-          color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSleepIcon() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const PlayerScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/mediaicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/mediaicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.music_note,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlayerIcon() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const SleepScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/sleeplogo.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/sleeplogo.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.bedtime,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBookIcon() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          noAnimationRoute(const TasksScreen()),
-        );
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Image.asset(
-            'assets/icons/bookicon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              print('Ошибка загрузки изображения: $error');
-              print('Путь: assets/icons/bookicon.png');
-              return Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.book,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCentralButton() {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(23),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Container(
-          width: 30,
-          height: 30,
-          child: ClipRRect(
-            borderRadius: BorderRadius.zero,
-            child: Image.asset(
-              'assets/icons/harmonyicon.png',
-              width: 30,
-              height: 30,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                print('Ошибка загрузки изображения: $error');
-                print('Путь: assets/icons/harmonyicon.png');
-                // Если изображение не загружается, показываем иконку
-                return Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: const Icon(
-                    Icons.image,
-                    color: Colors.blue,
-                    size: 20,
-                  ),
-                );
-              },
+              ),
             ),
-          ),
+          ],
         ),
+      ),
+      ),
+    );
+  }
+  
+  // Рекомендованные карточки (две рядом)
+  Widget _buildRecommendedCards() {
+    final cards = _recommendedCards.take(2).toList();
+    return Row(
+      children: cards.asMap().entries.map((entry) {
+        final index = entry.key;
+        final card = entry.value;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: index == 0 ? 8 : 0),
+            child: _buildSmallCard(card),
+          ),
+        );
+      }).toList(),
+    );
+  }
+  
+  // Экстренные карточки
+  Widget _buildEmergencyCards() {
+    return Column(
+      children: _emergencyCards.map((card) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildSmallCard(card),
+        );
+      }).toList(),
+    );
+  }
+  
+  // Маленькая карточка
+  Widget _buildSmallCard(HomeCard card) {
+    return GestureDetector(
+      onTap: () {
+        // Можно добавить навигацию на детальную страницу
+        print('Нажата карточка: ${card.title}');
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            // Изображение
+            Positioned.fill(
+              child: Image.asset(
+                card.image,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[800],
+                    child: const Center(
+                      child: Icon(Icons.image, color: Colors.white54, size: 32),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Градиент снизу
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 80,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Замок/просмотры в левом нижнем углу
+            Positioned(
+              bottom: 50,
+              left: 12,
+              child: Row(
+                children: [
+                  if (card.isLocked)
+                    const Icon(
+                      Icons.lock,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  if (card.isLocked) const SizedBox(width: 4),
+                  if (card.views != null)
+                    Text(
+                      card.views!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (card.duration != null)
+                    Text(
+                      card.duration!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Текст внизу
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      card.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      card.type,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       ),
     );
   }
 }
-
-class BottomMenuClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    final width = size.width;
-    final height = size.height;
-    
-    // Точная форма по SVG координатам
-    path.moveTo(21.1753 * width / 375, 0.0308974 * height / 62);
-    path.cubicTo(
-      9.66565 * width / 375, -0.601449 * height / 62,
-      0, 8.55308 * height / 62,
-      0, 20.08 * height / 62,
-    );
-    path.lineTo(0, 69.8165 * height / 62);
-    path.cubicTo(
-      0, 74.2348 * height / 62,
-      3.58172 * height / 62, 77.8165 * height / 62,
-      8 * height / 62, 77.8165 * height / 62,
-    );
-    path.lineTo(367 * width / 375, 77.8165 * height / 62);
-    path.cubicTo(
-      371.418 * height / 62, 77.8165 * height / 62,
-      375 * width / 375, 74.2348 * height / 62,
-      375 * width / 375, 69.8165 * height / 62,
-    );
-    path.lineTo(375 * width / 375, 20.08 * height / 62);
-    path.cubicTo(
-      375 * width / 375, 8.55308 * height / 62,
-      365.334 * width / 375, -0.601448 * height / 62,
-      353.825 * width / 375, 0.0308983 * height / 62,
-    );
-    path.cubicTo(
-      325.867 * width / 375, 1.56691 * height / 62,
-      274.72 * width / 375, 4.14658 * height / 62,
-      228.096 * width / 375, 5.26815 * height / 62,
-    );
-    path.cubicTo(
-      220.288 * width / 375, 5.45598 * height / 62,
-      214.418 * width / 375, 19.1347 * height / 62,
-      214.937 * width / 375, 26.9279 * height / 62,
-    );
-    path.cubicTo(
-      214.979 * width / 375, 27.5521 * height / 62,
-      215 * width / 375, 28.1818 * height / 62,
-      215 * width / 375, 28.8165 * height / 62,
-    );
-    path.cubicTo(
-      215 * width / 375, 44.2805 * height / 62,
-      202.464 * width / 375, 56.8165 * height / 62,
-      187 * width / 375, 56.8165 * height / 62,
-    );
-    path.cubicTo(
-      171.536 * width / 375, 56.8165 * height / 62,
-      159 * width / 375, 44.2805 * height / 62,
-      159 * width / 375, 28.8165 * height / 62,
-    );
-    path.cubicTo(
-      159 * width / 375, 28.1766 * height / 62,
-      159.021 * width / 375, 27.5418 * height / 62,
-      159.064 * width / 375, 26.9126 * height / 62,
-    );
-    path.cubicTo(
-      159.587 * width / 375, 19.1192 * height / 62,
-      153.725 * width / 375, 5.4352 * height / 62,
-      145.917 * width / 375, 5.24419 * height / 62,
-    );
-    path.cubicTo(
-      99.5592 * width / 375, 4.11023 * height / 62,
-      48.9355 * width / 375, 1.55607 * height / 62,
-      21.1753 * width / 375, 0.0308974 * height / 62,
-    );
-    path.close();
-    
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
-
 
 // Иконка пользователя для верхней части (50x50)
 class UserTopIconPainter extends CustomPainter {
@@ -602,140 +790,3 @@ class UserTopIconPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-// Иконка плеера для нижнего меню
-class PlayerIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.7
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    // Основной корпус плеера
-    final playerPath = Path();
-    playerPath.moveTo(size.width * 0.099, size.height * 0.292); // 2.781/28
-    playerPath.cubicTo(
-      size.width * 0.081, size.height * 0.444, // 2.26/28
-      size.width * 0.071, size.height * 0.52, // 2.0/28
-      size.width * 0.111, size.height * 0.334, // 3.106/28
-    );
-    playerPath.cubicTo(
-      size.width * 0.15, size.height * 0.292, // 4.212/28
-      size.width * 0.221, size.height * 0.292, // 6.18/28
-      size.width * 0.361, size.height * 0.292, // 10.118/28
-    );
-    playerPath.lineTo(size.width * 0.639, size.height * 0.292); // 17.882/28
-    playerPath.cubicTo(
-      size.width * 0.779, size.height * 0.292, // 21.819/28
-      size.width * 0.849, size.height * 0.292, // 23.788/28
-      size.width * 0.889, size.height * 0.334, // 24.894/28
-    );
-    playerPath.cubicTo(
-      size.width * 0.995, size.height * 0.52, // 25.0/28
-      size.width * 0.929, size.height * 0.444, // 25.74/28
-      size.width * 0.901, size.height * 0.292, // 25.22/28
-    );
-    playerPath.lineTo(size.width * 0.902, size.height * 0.7); // 24.726/28
-    playerPath.cubicTo(
-      size.width * 0.868, size.height * 0.803, // 24.318/28
-      size.width * 0.868, size.height * 0.855, // 24.114/28
-      size.width * 0.868, size.height * 0.857, // 23.067/28
-    );
-    playerPath.cubicTo(
-      size.width * 0.786, size.height * 0.917, // 22.02/28
-      size.width * 0.731, size.height * 0.917, // 20.476/28
-      size.width * 0.621, size.height * 0.917, // 17.389/28
-    );
-    playerPath.lineTo(size.width * 0.379, size.height * 0.917); // 10.611/28
-    playerPath.cubicTo(
-      size.width * 0.269, size.height * 0.917, // 7.524/28
-      size.width * 0.214, size.height * 0.917, // 5.98/28
-      size.width * 0.176, size.height * 0.857, // 4.932/28
-    );
-    playerPath.cubicTo(
-      size.width * 0.139, size.height * 0.855, // 3.886/28
-      size.width * 0.132, size.height * 0.803, // 3.682/28
-      size.width * 0.117, size.height * 0.7, // 3.274/28
-    );
-    playerPath.close();
-
-    // Кнопка воспроизведения
-    final playButtonPath = Path();
-    playButtonPath.addOval(Rect.fromCenter(
-      center: Offset(size.width * 0.5, size.height * 0.708), // 19.833/28
-      width: size.width * 0.125, // 3.5/28
-      height: size.width * 0.125,
-    ));
-
-    // Кнопка громкости
-    final volumePath = Path();
-    volumePath.moveTo(size.width * 0.5, size.height * 0.438); // 12.25/28
-    volumePath.lineTo(size.width * 0.5, size.height * 0.708); // 19.833/28
-    volumePath.lineTo(size.width * 0.625, size.height * 0.562); // 17.5/28
-    volumePath.lineTo(size.width * 0.625, size.height * 0.562); // 15.75/28
-
-    // Верхняя часть
-    final topPath = Path();
-    topPath.moveTo(size.width * 0.815, size.height * 0.292); // 22.822/28
-    topPath.cubicTo(
-      size.width * 0.827, size.height * 0.237, // 23.089/28
-      size.width * 0.783, size.height * 0.188, // 21.918/28
-      size.width * 0.727, size.height * 0.188, // 20.372/28
-    );
-    topPath.lineTo(size.width * 0.272, size.height * 0.188); // 7.628/28
-    topPath.cubicTo(
-      size.width * 0.217, size.height * 0.188, // 6.082/28
-      size.width * 0.175, size.height * 0.237, // 4.911/28
-      size.width * 0.185, size.height * 0.292, // 5.178/28
-    );
-
-    // Нижняя часть
-    final bottomPath = Path();
-    bottomPath.moveTo(size.width * 0.729, size.height * 0.188); // 20.417/28
-    bottomPath.cubicTo(
-      size.width * 0.73, size.height * 0.177, // 20.45/28
-      size.width * 0.73, size.height * 0.171, // 20.467/28
-      size.width * 0.73, size.height * 0.167, // 20.467/28
-    );
-    bottomPath.cubicTo(
-      size.width * 0.73, size.height * 0.124, // 20.469/28
-      size.width * 0.657, size.height * 0.088, // 19.57/28
-      size.width * 0.657, size.height * 0.084, // 18.382/28
-    );
-    bottomPath.cubicTo(
-      size.width * 0.657, size.height * 0.083, // 18.258/28
-      size.width * 0.657, size.height * 0.083, // 18.106/28
-      size.width * 0.657, size.height * 0.083, // 17.802/28
-    );
-    bottomPath.lineTo(size.width * 0.364, size.height * 0.083); // 10.198/28
-    bottomPath.cubicTo(
-      size.width * 0.354, size.height * 0.083, // 9.894/28
-      size.width * 0.348, size.height * 0.083, // 9.742/28
-      size.width * 0.343, size.height * 0.084, // 9.618/28
-    );
-    bottomPath.cubicTo(
-      size.width * 0.301, size.height * 0.088, // 8.43/28
-      size.width * 0.269, size.height * 0.124, // 7.531/28
-      size.width * 0.269, size.height * 0.167, // 7.533/28
-    );
-    bottomPath.cubicTo(
-      size.width * 0.269, size.height * 0.171, // 7.533/28
-      size.width * 0.27, size.height * 0.177, // 7.55/28
-      size.width * 0.271, size.height * 0.188, // 7.583/28
-    );
-
-    canvas.drawPath(playerPath, paint);
-    canvas.drawPath(playButtonPath, paint);
-    canvas.drawPath(volumePath, paint);
-    canvas.drawPath(topPath, paint);
-    canvas.drawPath(bottomPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-

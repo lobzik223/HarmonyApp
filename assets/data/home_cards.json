@@ -1,0 +1,49 @@
+{
+  "featured": {
+    "id": "featured1",
+    "image": "assets/images/window1.jpg",
+    "date": "5 декабря",
+    "title": "Путь вдоха",
+    "subtitle": "Китайская мудрость о долголетии",
+    "type": "Занятие",
+    "duration": "8 мин",
+    "isLocked": false
+  },
+  "recommended": [
+    {
+      "id": "rec1",
+      "image": "assets/images/id2.jpg",
+      "title": "Исполнение желаний",
+      "type": "Курс",
+      "views": "12,3 тыс",
+      "isLocked": false
+    },
+    {
+      "id": "rec2",
+      "image": "assets/images/id3.png",
+      "title": "Колесо жизненного баланса",
+      "type": "Курс",
+      "views": "26,3 тыс",
+      "isLocked": false
+    }
+  ],
+  "emergency": [
+    {
+      "id": "emergency1",
+      "image": "assets/images/fon1.jpg",
+      "title": "Снятие стресса",
+      "type": "Медитация",
+      "duration": "5 мин",
+      "isLocked": false
+    },
+    {
+      "id": "emergency2",
+      "image": "assets/images/window1.jpg",
+      "title": "Быстрое успокоение",
+      "type": "Дыхание",
+      "duration": "3 мин",
+      "isLocked": false
+    }
+  ]
+}
+
