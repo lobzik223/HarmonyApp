@@ -144,44 +144,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: SizedBox(
               height: scrollViewHeight,
               child: ClipRect(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Карточка профиля
-                      _buildProfileCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Раздел "Данные профиля"
-                      _buildSectionTitle('Данные профиля'),
-                      const SizedBox(height: 12),
-                      _buildProfileDataCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Раздел "Конфиденциальность"
-                      _buildSectionTitle('Конфиденциальность'),
-                      const SizedBox(height: 12),
-                      _buildPrivacyCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Раздел "Уведомления"
-                      _buildSectionTitle('Уведомления'),
-                      const SizedBox(height: 12),
-                      _buildNotificationsCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Раздел "Настройки"
-                      _buildSectionTitle('Настройки'),
-                      const SizedBox(height: 12),
-                      _buildSettingsCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Кнопка выхода
-                      _buildLogoutButton(),
-                      const SizedBox(height: 32),
-                    ],
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Карточка профиля
+                  _buildProfileCard(),
+                  const SizedBox(height: 20),
+                  
+                  // Раздел "Данные профиля"
+                  _buildSectionTitle('Данные профиля'),
+                  const SizedBox(height: 12),
+                  _buildProfileDataCard(),
+                  const SizedBox(height: 20),
+                  
+                  // Раздел "Конфиденциальность"
+                  _buildSectionTitle('Конфиденциальность'),
+                  const SizedBox(height: 12),
+                  _buildPrivacyCard(),
+                  const SizedBox(height: 20),
+                  
+                  // Раздел "Уведомления"
+                  _buildSectionTitle('Уведомления'),
+                  const SizedBox(height: 12),
+                  _buildNotificationsCard(),
+                  const SizedBox(height: 20),
+                  
+                  // Раздел "Настройки"
+                  _buildSectionTitle('Настройки'),
+                  const SizedBox(height: 12),
+                  _buildSettingsCard(),
+                  const SizedBox(height: 20),
+                  
+                  // Кнопка выхода
+                  _buildLogoutButton(),
+                  const SizedBox(height: 32),
+                ],
                   ),
                 ),
               ),

@@ -132,10 +132,9 @@ class _TasksScreenState extends State<TasksScreen> {
         // Получаем сокращение дня недели на русском
         final dayAbbreviation = _getDayAbbreviation(weekday);
         
-        // Форматируем дату в формат DD.MM
+        // Форматируем дату - только день
         final day = currentDate.day.toString().padLeft(2, '0');
-        final month = currentDate.month.toString().padLeft(2, '0');
-        final dateStr = '$day.$month';
+        final dateStr = day;
         
         // По умолчанию все карточки не выполнены
         cards.add(DayCard(
@@ -408,10 +407,10 @@ class _TasksScreenState extends State<TasksScreen> {
                             ),
                             child: Stack(
                               children: [
-                                // Контент даты (только дата)
+                                // Контент даты (только день)
                                 Center(
                                   child: Text(
-                                    '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}',
+                                    date.day.toString().padLeft(2, '0'),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w400,

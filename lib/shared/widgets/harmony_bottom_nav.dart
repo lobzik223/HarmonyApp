@@ -102,13 +102,13 @@ class HarmonyBottomNav extends StatelessWidget {
                         }
                         if (isPlayer) {
                           return Transform.translate(
-                            offset: const Offset(3, 0), // Сдвиг вправо на 3 пикселя
+                            offset: const Offset(6, 0), // Сдвиг вправо на 6 пикселей
                             child: navItem,
                           );
                         }
                         if (isSleep) {
                           return Transform.translate(
-                            offset: const Offset(-2, 0), // Сдвиг влево на 2 пикселя
+                            offset: const Offset(-5, 0), // Сдвиг влево на 5 пикселей
                             child: navItem,
                           );
                         }
@@ -155,8 +155,13 @@ class _HarmonyNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isHome = tab == HarmonyTab.home;
-    final double badgeSize = isHome ? 56 : 48;
-    final double iconSize = isHome ? 30 : 28;
+    final bool isMeditation = tab == HarmonyTab.meditation;
+    final double badgeSize = isHome 
+        ? 56 
+        : (isMeditation && isSelected ? 50 : 48);
+    final double iconSize = isHome 
+        ? 30 
+        : (isMeditation && isSelected ? 29 : 28);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -511,8 +516,8 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
       return path;
     } else if (activeIndex == 1) {
       // Вырез для сна (вторая вкладка) - уменьшенная глубина, сдвинуто влево
-      // Иконка сна сдвинута на 2px влево, вырез тоже сдвигаем
-      const double sleepOffset = -2.0; // Сдвиг иконки влево
+      // Иконка сна сдвинута на 5px влево, вырез тоже сдвигаем
+      const double sleepOffset = -5.0; // Сдвиг иконки влево
       final path = Path()
         // Вырез для сна - начинается с нижней точки круга (поднято выше), сдвинуто влево
         ..moveTo((113 + sleepOffset) * sx, 48 * sy) // Сдвинуто влево
@@ -607,8 +612,8 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
       const double refHeightPlayer = 63.0; // Высота viewBox из SVG для player
       final double syPlayer = size.height / refHeightPlayer;
       // Вырез для плеера - уменьшенная глубина (поднято выше), сдвинуто правее
-      // Иконка плеера сдвинута на 3px вправо, вырез тоже сдвигаем
-      const double playerOffset = 3.0; // Сдвиг иконки вправо
+      // Иконка плеера сдвинута на 6px вправо, вырез тоже сдвигаем
+      const double playerOffset = 6.0; // Сдвиг иконки вправо
       
       final path = Path()
         ..moveTo((262 + playerOffset) * sx, 50 * syPlayer) // Сдвинуто правее
