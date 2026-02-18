@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/utils/navigation_utils.dart';
@@ -354,6 +355,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           
+          // Заголовок "Главная" по центру
+          Positioned(
+            top: 62,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                'Главная',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white,
+                  decoration: TextDecoration.none,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+          ),
+          
           // Скроллируемый контент с карточками
           Positioned(
             top: 130,
@@ -371,14 +391,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   const SizedBox(height: 32),
                   
-                  // Раздел "Рекомендовано для вас"
+                  // Раздел "Сила мыслей"
                   if (_recommendedCards.isNotEmpty) ...[
-                    const Text(
-                      'Рекомендовано для вас',
-                      style: TextStyle(
+                    Text(
+                      'Сила мыслей',
+                      style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
+                        height: 1.0,
+                        letterSpacing: 0.48,
                         color: Colors.white,
+                        decoration: TextDecoration.none,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -386,14 +409,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 32),
                   ],
                   
-                  // Раздел "Экстренные ситуации"
+                  // Раздел "Популярное от Harmony"
                   if (_emergencyCards.isNotEmpty) ...[
-                    const Text(
-                      'Экстренные ситуации',
-                      style: TextStyle(
+                    Text(
+                      'Популярное от Harmony',
+                      style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
+                        height: 1.0,
+                        letterSpacing: 0.48,
                         color: Colors.white,
+                        decoration: TextDecoration.none,
                       ),
                     ),
                     const SizedBox(height: 16),

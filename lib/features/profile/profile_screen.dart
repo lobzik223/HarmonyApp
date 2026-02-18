@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
+import '../premium/premium_screen.dart';
+import '../../core/utils/navigation_utils.dart';
 
 /// Экран "Профиль"
 /// Фон: assets/images/fon1.jpg
@@ -412,6 +414,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               _buildSettingItem(
+                icon: Icons.star_outline,
+                title: 'Premium',
+                value: '',
+                onTap: () {
+                  Navigator.of(context).push(
+                    noAnimationRoute(const PremiumScreen()),
+                  );
+                },
+              ),
+              const Divider(color: Colors.white24, height: 24),
+              _buildSettingItem(
                 icon: Icons.language_outlined,
                 title: 'Язык',
                 value: 'Русский',
@@ -603,20 +616,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white.withOpacity(0.9),
-        title: const Text('Выйти из аккаунта?'),
-        content: const Text('Вы уверены, что хотите выйти?'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Выйти из аккаунта?',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF202020),
+          ),
+        ),
+        content: Text(
+          'Вы уверены, что хотите выйти?',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF424242),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Отмена'),
+            child: Text(
+              'Отмена',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1976D2),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               // Здесь можно добавить логику выхода
             },
-            child: const Text('Выйти', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Выйти',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFD32F2F),
+              ),
+            ),
           ),
         ],
       ),

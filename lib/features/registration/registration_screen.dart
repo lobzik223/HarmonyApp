@@ -90,9 +90,9 @@ class RegistrationScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         _buildTextField('Фамилия'),
                         const SizedBox(height: 16),
-                        _buildTextField('Телефон'),
-                        const SizedBox(height: 16),
                         _buildTextField('Почта'),
+                        const SizedBox(height: 16),
+                        _buildTextField('Пароль'),
                         const SizedBox(height: 32),
                         // Кнопка "Зарегистрироваться"
                         SizedBox(
