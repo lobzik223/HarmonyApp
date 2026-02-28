@@ -71,6 +71,13 @@ class HomeCard {
 }
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Ловим ошибки Flutter, чтобы в консоли было видно причину чёрного экрана
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('FlutterError: ${details.exception}');
+    debugPrint('Stack: ${details.stack}');
+  };
   runApp(const HarmonyApp());
 }
 
@@ -84,7 +91,7 @@ class HarmonyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light, // светлая тема, чтобы не было чёрного фона при отсутствии картинок
       home: const LoadingScreen(),
     );
   }
@@ -225,17 +232,20 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFE8E8E8),
       body: Stack(
         children: [
-          // Фоновое изображение на весь экран
+          // Фон (светлый запасной, если картинка не загрузится) + изображение на весь экран
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(_backgrounds[_currentBackgroundIndex]),
-                fit: BoxFit.cover,
-              ),
+            color: const Color(0xFFE8E8E8),
+          ),
+          Positioned.fill(
+            child: Image.asset(
+              _backgrounds[_currentBackgroundIndex],
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
           ),
           // Верхняя иконка с кнопкой (слева) - переключает фон

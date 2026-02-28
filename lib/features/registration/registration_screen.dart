@@ -5,6 +5,7 @@ import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
+import '../../core/constants/app_constants.dart';
 import '../login/login_screen.dart';
 import '../plan/plan_selection_section.dart';
 
@@ -45,7 +46,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       else if (surname.isEmpty) _errorText = 'Введите фамилию';
       else if (email.isEmpty) _errorText = 'Введите почту';
       else if (!email.contains('@')) _errorText = 'Введите корректный email';
-      else if (password.length < 8) _errorText = 'Пароль не короче 8 символов';
+      else if (password.length < AppConstants.passwordMinLength) _errorText = 'Пароль не короче ${AppConstants.passwordMinLength} символов';
+      else if (password.length > AppConstants.passwordMaxLength) _errorText = 'Пароль не длиннее ${AppConstants.passwordMaxLength} символов';
+      else if (!RegExp(r'[a-zA-Zа-яА-ЯёЁ]').hasMatch(password)) _errorText = 'Пароль должен содержать хотя бы одну букву';
+      else if (!RegExp(r'[0-9]').hasMatch(password)) _errorText = 'Пароль должен содержать хотя бы одну цифру';
       if (_errorText != null) return;
       _loading = true;
     });
@@ -68,16 +72,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         Navigator.of(context).pushReplacement(
           noAnimationRoute(const PlanSelectionSection()),
         );
-      } else {
-        setState(() {
-          _errorText = res.error ?? 'Ошибка регистрации';
-          _loading = false;
-        });
+        return;
       }
+      setState(() {
+        _errorText = res.error ?? 'Не удалось зарегистрироваться. Проверьте данные и попробуйте снова.';
+        _loading = false;
+      });
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorText = 'Не удалось подключиться. Проверьте интернет.';
+          _errorText = 'Нет соединения с интернетом. Проверьте сеть и попробуйте снова.';
           _loading = false;
         });
       }

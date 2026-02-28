@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorText = null;
       if (email.isEmpty) _errorText = 'Введите почту';
       else if (!email.contains('@')) _errorText = 'Введите корректный email';
-      else if (password.length < 8) _errorText = 'Пароль не короче 8 символов';
+      else if (password.isEmpty) _errorText = 'Введите пароль';
       if (_errorText != null) return;
       _loading = true;
     });
@@ -55,16 +55,16 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.of(context).pushReplacement(
           noAnimationRoute(const PlanSelectionSection()),
         );
-      } else {
-        setState(() {
-          _errorText = res.error ?? 'Неверная почта или пароль';
-          _loading = false;
-        });
+        return;
       }
+      setState(() {
+        _errorText = res.error ?? 'Неверная почта или пароль. Проверьте данные и попробуйте снова.';
+        _loading = false;
+      });
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorText = 'Не удалось подключиться. Проверьте интернет.';
+          _errorText = 'Нет соединения с интернетом. Проверьте сеть и попробуйте снова.';
           _loading = false;
         });
       }

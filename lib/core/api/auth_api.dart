@@ -73,11 +73,11 @@ class AuthApi {
     try {
       body = json.decode(res.body);
     } catch (_) {
-      return AuthResponse(success: false, error: 'Ошибка сервера');
+      return AuthResponse(success: false, error: 'Сервер вернул неверный ответ. Попробуйте позже.');
     }
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final map = body is Map ? body as Map<String, dynamic> : null;
-      if (map == null) return AuthResponse(success: false, error: 'Неверный ответ сервера');
+      if (map == null) return AuthResponse(success: false, error: 'Сервер вернул неверный ответ. Попробуйте позже.');
       final user = map['user'] as Map<String, dynamic>?;
       return AuthResponse(
         success: true,
@@ -93,7 +93,47 @@ class AuthApi {
       final first = body[0];
       if (first is Map && first['message'] != null) msg = first['message'].toString();
     }
-    return AuthResponse(success: false, error: msg ?? 'Ошибка ${res.statusCode}');
+    final userMessage = _errorToRussian(res.statusCode, msg);
+    return AuthResponse(success: false, error: userMessage);
+  }
+
+  /// Превращает код ответа и сообщение сервера в понятное описание на русском.
+  static String _errorToRussian(int statusCode, String? serverMessage) {
+    switch (statusCode) {
+      case 400:
+        return serverMessage?.isNotEmpty == true
+            ? serverMessage!
+            : 'Неверный запрос. Проверьте введённые данные.';
+      case 401:
+        return 'Сервер отклонил доступ. Проверьте адрес API и ключ приложения (HARMONY_APP_KEY) в настройках бэкенда.';
+      case 403:
+        return 'Доступ запрещён. Недостаточно прав.';
+      case 404:
+        return 'Сервис не найден. Проверьте подключение к интернету или попробуйте позже.';
+      case 409:
+        return 'Такой email уже зарегистрирован. Войдите или восстановите пароль.';
+      case 422:
+        return serverMessage?.isNotEmpty == true
+            ? serverMessage!
+            : 'Данные заполнены неверно. Проверьте поля и попробуйте снова.';
+      case 429:
+        return 'Слишком много попыток. Подождите немного и попробуйте снова.';
+      case 500:
+      case 502:
+      case 503:
+        return 'Временная ошибка на сервере. Попробуйте через несколько минут.';
+    }
+    if (serverMessage != null && serverMessage.isNotEmpty) {
+      final m = serverMessage.toLowerCase();
+      if (m.contains('unauthorized')) return 'Сервер отклонил доступ. Проверьте адрес API и ключ приложения (HARMONY_APP_KEY) в настройках бэкенда.';
+      if (m.contains('forbidden')) return 'Доступ запрещён.';
+      if (m.contains('not found')) return 'Сервис недоступен. Попробуйте позже.';
+      if (m.contains('already exists') || m.contains('already registered')) return 'Такой email уже зарегистрирован. Войдите или восстановите пароль.';
+      if (m.contains('invalid') || m.contains('invalid credentials')) return 'Неверная почта или пароль.';
+      if (m.contains('network') || m.contains('connection') || m.contains('timeout')) return 'Нет соединения с интернетом. Проверьте сеть.';
+      return serverMessage;
+    }
+    return 'Произошла ошибка (код $statusCode). Попробуйте ещё раз.';
   }
 }
 

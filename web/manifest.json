@@ -1,11 +1,11 @@
 {
-    "name": "Harmony App",
+    "name": "Harmony",
     "short_name": "Harmony",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Harmony App - кроссплатформенное приложение для iOS и Android",
+    "description": "Harmony - приложение для iOS и Android",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
