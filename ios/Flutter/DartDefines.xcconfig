@@ -1,0 +1,3 @@
+// Dart-define для сборки из Xcode (API URL и ключ приложения)
+// Те же значения, что в build-apk.ps1
+DART_DEFINES=eyJIQVJNT05ZX0FQSV9VUkwiOiJodHRwczovL2FwaS5oYXJtb255bWVkaXRhdGlvbi5vbmxpbmUiLCJIQVJNT05ZX0FQUF9LRVkiOiJFNy9wc0JuQ1ZlSzBSMWgybUwvRjFzSTVuNk92V0FzTHlXTjFzVHhDTjNNPSJ9
