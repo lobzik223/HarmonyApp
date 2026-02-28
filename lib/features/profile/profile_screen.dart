@@ -3,7 +3,9 @@ import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
 import '../premium/premium_screen.dart';
+import '../loading/loading_screen.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../core/auth/auth_storage.dart';
 
 /// Экран "Профиль"
 /// Фон: assets/images/fon1.jpg
@@ -31,9 +33,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final authName = await AuthStorage.getUserName();
+      final authEmail = await AuthStorage.getUserEmail();
       setState(() {
-        _userName = prefs.getString('user_name') ?? 'Пользователь';
-        _userEmail = prefs.getString('user_email') ?? 'user@example.com';
+        _userName = authName ?? prefs.getString('user_name') ?? 'Пользователь';
+        _userEmail = authEmail ?? prefs.getString('user_email') ?? 'user@example.com';
         _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
         _privacyMode = prefs.getBool('privacy_mode') ?? false;
         _dataSync = prefs.getBool('data_sync') ?? true;
@@ -51,6 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await prefs.setBool('notifications_enabled', _notificationsEnabled);
       await prefs.setBool('privacy_mode', _privacyMode);
       await prefs.setBool('data_sync', _dataSync);
+      // Профиль синхронизируется с локальными настройками; для обновления на сервере — отдельный API /api/auth/me PATCH
     } catch (e) {
       print('Ошибка сохранения данных профиля: $e');
     }
@@ -647,9 +652,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              // Здесь можно добавить логику выхода
+              await AuthStorage.clearAuth();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  noAnimationRoute(const LoadingScreen()),
+                  (_) => false,
+                );
+              }
             },
             child: Text(
               'Выйти',

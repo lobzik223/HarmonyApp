@@ -3,12 +3,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/meditation_track.dart';
 
-/// Мини-плеер, который отображается внизу экрана
+/// Мини-плеер, который отображается внизу экрана.
+/// По нажатию на область плеера (не на кнопки) вызывается [onTap] — открытие полноэкранного плеера.
 class MiniPlayer extends StatelessWidget {
   final MeditationTrack? track;
   final VoidCallback? onPrevious;
   final VoidCallback? onPlayPause;
   final VoidCallback? onNext;
+  final VoidCallback? onTap;
   final double progress; // 0.0 - 1.0
   final bool isPlaying;
   final String currentTime;
@@ -20,6 +22,7 @@ class MiniPlayer extends StatelessWidget {
     this.onPrevious,
     this.onPlayPause,
     this.onNext,
+    this.onTap,
     this.progress = 0.0,
     this.isPlaying = false,
     this.currentTime = '10:56',
@@ -36,14 +39,17 @@ class MiniPlayer extends StatelessWidget {
       bottom: 0, // Начинаем с самого низа, чтобы белый фон продолжался под меню
       left: 0,
       right: 0,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Основной контент плеера (над меню)
-          Container(
-            width: double.infinity, // Максимальная ширина без margin
-            decoration: BoxDecoration(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Основной контент плеера (над меню)
+            Container(
+              width: double.infinity, // Максимальная ширина без margin
+              decoration: BoxDecoration(
               color: Colors.white, // Белый фон
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
@@ -293,13 +299,14 @@ class MiniPlayer extends StatelessWidget {
         ),
           ),
           // Белый фон, продолжающийся под меню (высота меню 63)
-          Container(
-            height: 63,
-            width: double.infinity,
-            color: Colors.white, // Белый фон под меню
-            margin: const EdgeInsets.symmetric(horizontal: 0), // Без отступов для полной ширины
-          ),
-        ],
+            Container(
+              height: 63,
+              width: double.infinity,
+              color: Colors.white, // Белый фон под меню
+              margin: const EdgeInsets.symmetric(horizontal: 0), // Без отступов для полной ширины
+            ),
+          ],
+        ),
       ),
     );
   }

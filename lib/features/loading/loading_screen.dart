@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../core/api/auth_api.dart';
+import '../../core/auth/auth_storage.dart';
+import '../../main.dart';
 import '../registration/registration_screen.dart';
 import 'dart:ui' as ui;
 
@@ -15,9 +18,9 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProviderStateMixin {
-  // Автоматический переход убран - теперь переход только при нажатии на кнопку "Далее"
   late AnimationController _rotationController;
   bool _assetsLoaded = false;
+  bool _checkingAuth = true;
 
   @override
   void initState() {
@@ -26,9 +29,23 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat();
-    
-    // Предзагрузка всех ресурсов для мгновенного отображения
-    _preloadAssets();
+    _checkAuthAndPreload();
+  }
+
+  Future<void> _checkAuthAndPreload() async {
+    // Проверка: есть ли сохранённый аккаунт
+    final token = await AuthStorage.getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      final user = await AuthApi.me(token);
+      if (user != null && mounted) {
+        // Токен валиден — сразу на главный экран
+        Navigator.of(context).pushReplacement(noAnimationRoute(const HomeScreen()));
+        return;
+      }
+      await AuthStorage.clearAuth();
+    }
+    if (mounted) setState(() => _checkingAuth = false);
+    await _preloadAssets();
   }
 
   Future<void> _preloadAssets() async {
@@ -145,13 +162,13 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
             ),
           ),
           
-          // Кнопка "Далее" сверху
+          // Кнопка "Далее" сверху (неактивна пока проверяем аккаунт)
           SafeArea(
             child: Positioned(
               top: 20,
               right: 20,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: _checkingAuth ? null : () {
                   Navigator.of(context).pushReplacement(
                     noAnimationRoute(const RegistrationScreen()),
                   );

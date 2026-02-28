@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../core/api/content_api.dart';
 import '../../shared/models/meditation_track.dart';
 import '../../shared/widgets/mini_player.dart';
 import '../../shared/widgets/harmony_bottom_nav.dart';
 import '../sleep/sleep_screen.dart';
 import '../tasks/tasks_screen.dart';
 import '../player/player_screen.dart';
+import '../player/open_player_screen.dart';
 
 /// Экран "Медитации"
 /// Фон с градиентами точно как в SVG
@@ -39,47 +39,27 @@ class _MeditationScreenState extends State<MeditationScreen> {
 
   Future<void> _loadTracks() async {
     try {
-      final String response = await rootBundle.loadString('assets/data/meditation_tracks.json');
-      final data = json.decode(response) as Map<String, dynamic>;
-      final List<dynamic> tracksJson = data['tracks'] as List<dynamic>;
-      final allTracks = tracksJson
-          .map((trackJson) => MeditationTrack.fromJson(trackJson as Map<String, dynamic>))
-          .toList();
-      
+      final allTracks = await ContentApi.getMeditationTracks();
       final relaxation = allTracks.where((track) => track.category == 'relaxation').toList();
       final inspiration = allTracks.where((track) => track.category == 'inspiration').toList();
       final love = allTracks.where((track) => track.category == 'love').toList();
-      
-      print('=== ЗАГРУЗКА ТРЕКОВ ===');
-      print('Всего треков загружено: ${allTracks.length}');
-      print('Треков для отдыха: ${relaxation.length}');
-      print('Треков для вдохновения: ${inspiration.length}');
-      print('Треков для поиска любви: ${love.length}');
-      for (var track in allTracks) {
-        print('Трек ID: ${track.id}, категория: ${track.category}, название: ${track.title}');
-      }
-      
       if (mounted) {
         setState(() {
           _relaxationTracks = relaxation;
           _inspirationTracks = inspiration;
           _loveTracks = love;
-          _allTracks = allTracks; // Сохраняем все треки
-          
-          // Не устанавливаем активный трек при загрузке - только при нажатии на карточку
+          _allTracks = allTracks;
           _activeTrackId = null;
           _isPlaying = false;
         });
-        print('Состояние обновлено. Relaxation: ${_relaxationTracks.length}, Inspiration: ${_inspirationTracks.length}, Love: ${_loveTracks.length}');
       }
     } catch (e) {
-      print('Ошибка загрузки треков: $e');
-      print('Stack trace: ${StackTrace.current}');
       if (mounted) {
         setState(() {
           _relaxationTracks = [];
           _inspirationTracks = [];
           _loveTracks = [];
+          _allTracks = [];
         });
       }
     }
@@ -450,6 +430,47 @@ class _MeditationScreenState extends State<MeditationScreen> {
               isPlaying: _isPlaying,
               progress: _progress,
               currentTime: _currentTime,
+              totalTime: '3:42',
+              onTap: () {
+                final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                final t = idx >= 0 ? _allTracks[idx] : _allTracks.first;
+                Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (context) => OpenPlayerScreen(
+                      track: t,
+                      tracks: _allTracks,
+                      initialIndex: idx >= 0 ? idx : 0,
+                      isPlaying: _isPlaying,
+                      progress: _progress,
+                      currentTime: _currentTime,
+                      totalTime: '3:42',
+                      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+                      onPrevious: () {
+                        if (_activeTrackId != null && idx > 0) {
+                          setState(() {
+                            _activeTrackId = _allTracks[idx - 1].id;
+                            _isPlaying = true;
+                            _progress = 0.0;
+                          });
+                        }
+                      },
+                      onNext: () {
+                        if (_activeTrackId != null && idx < _allTracks.length - 1) {
+                          setState(() {
+                            _activeTrackId = _allTracks[idx + 1].id;
+                            _isPlaying = true;
+                            _progress = 0.0;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ).then((newActiveId) {
+                  if (newActiveId != null && mounted) {
+                    setState(() => _activeTrackId = newActiveId);
+                  }
+                });
+              },
               onPlayPause: () {
                 setState(() {
                   _isPlaying = !_isPlaying;

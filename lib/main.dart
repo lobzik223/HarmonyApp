@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/utils/navigation_utils.dart';
+import 'core/api/content_api.dart';
 import 'features/loading/loading_screen.dart';
 import 'features/registration/registration_screen.dart';
 import 'features/plan/plan_selection_section.dart';
@@ -43,15 +42,30 @@ class HomeCard {
 
   factory HomeCard.fromJson(Map<String, dynamic> json) {
     return HomeCard(
-      id: json['id'] as String,
-      image: json['image'] as String,
-      title: json['title'] as String,
+      id: json['id'] as String? ?? '',
+      image: json['image'] as String? ?? '',
+      title: json['title'] as String? ?? '',
       subtitle: json['subtitle'] as String?,
-      type: json['type'] as String,
+      type: json['type'] as String? ?? '',
       date: json['date'] as String?,
       duration: json['duration'] as String?,
       views: json['views'] as String?,
       isLocked: json['isLocked'] as bool? ?? false,
+    );
+  }
+
+  /// Из статьи API (ContentArticle).
+  factory HomeCard.fromApiArticle(Map<String, dynamic> json) {
+    final base = AppConstants.baseUrl.replaceFirst(RegExp(r'/$'), '');
+    String image = json['imageUrl'] as String? ?? '';
+    if (image.isNotEmpty && !image.startsWith('http')) image = '$base$image';
+    return HomeCard(
+      id: json['id'] as String? ?? '',
+      image: image,
+      title: json['title'] as String? ?? '',
+      subtitle: json['descriptionShort'] as String?,
+      type: json['blockType'] as String? ?? 'FEATURED',
+      isLocked: false,
     );
   }
 }
@@ -107,98 +121,38 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadHomeCards();
   }
   
-  // Загружаем карточки из JSON
+  // Загружаем карточки с API (без демо)
   Future<void> _loadHomeCards() async {
     try {
-      final String response = await rootBundle.loadString('assets/data/home_cards.json');
-      final data = json.decode(response) as Map<String, dynamic>;
-      
-      // Загружаем главную карточку
-      if (data['featured'] != null) {
-        _featuredCard = HomeCard.fromJson(data['featured'] as Map<String, dynamic>);
+      final data = await ContentApi.getHome();
+      final home = data['home'] as Map<String, dynamic>?;
+      if (home == null) {
+        if (mounted) setState(() {});
+        return;
       }
-      
-      // Загружаем рекомендованные
-      if (data['recommended'] != null) {
-        final recommendedList = data['recommended'] as List<dynamic>;
-        _recommendedCards = recommendedList
-            .map((item) => HomeCard.fromJson(item as Map<String, dynamic>))
-            .toList();
+      if (home['featured'] != null) {
+        _featuredCard = HomeCard.fromApiArticle(home['featured'] as Map<String, dynamic>);
+      } else {
+        _featuredCard = null;
       }
-      
-      // Загружаем экстренные
-      if (data['emergency'] != null) {
-        final emergencyList = data['emergency'] as List<dynamic>;
-        _emergencyCards = emergencyList
-            .map((item) => HomeCard.fromJson(item as Map<String, dynamic>))
-            .toList();
-      }
-      
-      if (mounted) {
-        setState(() {});
-      }
+      _recommendedCards = (home['recommended'] as List<dynamic>?)
+          ?.map((e) => HomeCard.fromApiArticle(e as Map<String, dynamic>))
+          .toList() ?? [];
+      _emergencyCards = (home['emergency'] as List<dynamic>?)
+          ?.map((e) => HomeCard.fromApiArticle(e as Map<String, dynamic>))
+          .toList() ?? [];
+      if (mounted) setState(() {});
     } catch (e) {
-      print('Ошибка загрузки карточек: $e');
-      // Устанавливаем дефолтные данные если файл не загрузился
-      _setDefaultCards();
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _featuredCard = null;
+          _recommendedCards = [];
+          _emergencyCards = [];
+        });
       }
     }
   }
   
-  // Устанавливаем дефолтные карточки
-  void _setDefaultCards() {
-    _featuredCard = HomeCard(
-      id: 'featured1',
-      image: 'assets/images/window1.jpg',
-      date: '5 декабря',
-      title: 'Путь вдоха',
-      subtitle: 'Китайская мудрость о долголетии',
-      type: 'Занятие',
-      duration: '8 мин',
-      isLocked: false,
-    );
-    
-    _recommendedCards = [
-      HomeCard(
-        id: 'rec1',
-        image: 'assets/images/id2.jpg',
-        title: 'Исполнение желаний',
-        type: 'Курс',
-        views: '12,3 тыс',
-        isLocked: false,
-      ),
-      HomeCard(
-        id: 'rec2',
-        image: 'assets/images/id3.png',
-        title: 'Колесо жизненного баланса',
-        type: 'Курс',
-        views: '26,3 тыс',
-        isLocked: false,
-      ),
-    ];
-    
-    _emergencyCards = [
-      HomeCard(
-        id: 'emergency1',
-        image: 'assets/images/fon1.jpg',
-        title: 'Снятие стресса',
-        type: 'Медитация',
-        duration: '5 мин',
-        isLocked: false,
-      ),
-      HomeCard(
-        id: 'emergency2',
-        image: 'assets/images/window1.jpg',
-        title: 'Быстрое успокоение',
-        type: 'Дыхание',
-        duration: '3 мин',
-        isLocked: false,
-      ),
-    ];
-  }
-
   // Загружаем сохраненный фон
   Future<void> _loadSavedBackground() async {
     try {

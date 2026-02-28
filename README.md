@@ -122,6 +122,23 @@ flutter build apk --release
 flutter build ios --release
 ```
 
+#### Сборка для продакшена (API + ключ приложения)
+
+Если бекенд использует ключ приложения (`APP_KEY`), при сборке релиза передайте тот же ключ и при необходимости URL API (по умолчанию уже `https://api.harmonymeditation.online`). Связка всех проектов описана в **ENV-SETUP.md** в корне репозитория.
+
+```bash
+# Android
+flutter build apk --release --dart-define=HARMONY_APP_KEY=значение_APP_KEY_из_бэкенда
+
+# iOS
+flutter build ios --release --dart-define=HARMONY_APP_KEY=значение_APP_KEY_из_бэкенда
+```
+
+Опционально другой URL API:
+```bash
+--dart-define=HARMONY_API_URL=https://api.harmonymeditation.online --dart-define=HARMONY_APP_KEY=...
+```
+
 ## 📁 Структура ассетов
 
 ```

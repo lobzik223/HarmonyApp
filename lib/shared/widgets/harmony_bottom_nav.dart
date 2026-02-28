@@ -14,6 +14,7 @@ class HarmonyBottomNav extends StatelessWidget {
     this.isHomeStyle = false,
     this.highlightHomeIdle = false,
     this.leadingEdgeCutoutTab,
+    this.glassStyle = false,
   });
 
   final HarmonyTab activeTab;
@@ -21,6 +22,8 @@ class HarmonyBottomNav extends StatelessWidget {
   final bool isHomeStyle;
   final bool highlightHomeIdle;
   final HarmonyTab? leadingEdgeCutoutTab;
+  /// Когда true — прозрачное «стеклянное» меню (для открытого полноэкранного плеера), иконка плеера подсвечена.
+  final bool glassStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -50,23 +53,27 @@ class HarmonyBottomNav extends StatelessWidget {
                                   : _ClipperMode.dynamicNotch))),
                 ),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  filter: ImageFilter.blur(sigmaX: glassStyle ? 10 : 4, sigmaY: glassStyle ? 10 : 4),
                   child: Container(
                     padding: EdgeInsets.only(bottom: bottomInset),
-                    decoration: (isHomeStyle || activeTab == HarmonyTab.tasks)
+                    decoration: glassStyle
                         ? BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withOpacity(0.18),
                           )
-                        : const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFF44AAED),
-                                Color(0xFF46E4E3),
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                          ),
+                        : (isHomeStyle || activeTab == HarmonyTab.tasks)
+                            ? BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                              )
+                            : const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0xFF44AAED),
+                                    Color(0xFF46E4E3),
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                              ),
                   ),
                 ),
               ),
@@ -93,6 +100,7 @@ class HarmonyBottomNav extends StatelessWidget {
                           isSelected: tab == activeTab,
                           onTap: onTabSelected,
                           highlightHomeIdle: highlightHomeIdle,
+                          glowWhenPlayerActive: glassStyle && tab == HarmonyTab.player && tab == activeTab,
                         );
                         if (isMeditation) {
                           return Transform.translate(
@@ -137,12 +145,14 @@ class _HarmonyNavItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.highlightHomeIdle,
+    this.glowWhenPlayerActive = false,
   });
 
   final HarmonyTab tab;
   final bool isSelected;
   final ValueChanged<HarmonyTab>? onTap;
   final bool highlightHomeIdle;
+  final bool glowWhenPlayerActive;
 
   static const _iconPaths = {
     HarmonyTab.meditation: 'assets/icons/profileicon.png',
@@ -189,6 +199,18 @@ class _HarmonyNavItem extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(badgeSize / 2),
                       boxShadow: [
+                        if (glowWhenPlayerActive) ...[
+                          BoxShadow(
+                            color: const Color(0xFF44AAED).withOpacity(0.7),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF46E4E3).withOpacity(0.4),
+                            blurRadius: 24,
+                            spreadRadius: 4,
+                          ),
+                        ],
                         BoxShadow(
                           color: Colors.black.withOpacity(0.18),
                           offset: const Offset(0, 6),

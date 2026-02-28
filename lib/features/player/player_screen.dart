@@ -1,9 +1,7 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
-
 import 'package:flutter/material.dart';
 
 import '../../core/utils/navigation_utils.dart';
+import '../../core/api/content_api.dart';
 import '../../main.dart';
 import '../../shared/models/player_track.dart';
 import '../../shared/models/meditation_track.dart';
@@ -12,6 +10,7 @@ import '../../shared/widgets/harmony_bottom_nav.dart';
 import '../meditation/meditation_screen.dart';
 import '../sleep/sleep_screen.dart';
 import '../tasks/tasks_screen.dart';
+import 'open_player_screen.dart';
 
 /// Экран плеера с фоновой иллюстрацией и фирменным нижним меню
 class PlayerScreen extends StatefulWidget {
@@ -36,29 +35,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   Future<void> _loadTracks() async {
     try {
-      final String response = await rootBundle.loadString('assets/data/player_tracks.json');
-      final data = json.decode(response) as Map<String, dynamic>;
-      final List<dynamic> tracksJson = data['tracks'] as List<dynamic>;
-      final tracks = tracksJson
-          .map((trackJson) => PlayerTrack(
-                id: trackJson['id'] as String,
-                title: trackJson['title'] as String,
-                artist: trackJson['artist'] as String,
+      final med = await ContentApi.getMeditationTracks();
+      final sleep = await ContentApi.getSleepTracks();
+      final all = [...med, ...sleep];
+      final tracks = all
+          .map((t) => PlayerTrack(
+                id: t.id,
+                title: t.title,
+                artist: t.description.isNotEmpty ? t.description : 'Harmony',
               ))
           .toList();
-
-      if (mounted) {
-        setState(() {
-          _tracks = tracks;
-        });
-      }
+      if (mounted) setState(() => _tracks = tracks);
     } catch (e) {
-      print('Ошибка загрузки треков плеера: $e');
-      if (mounted) {
-        setState(() {
-          _tracks = [];
-        });
-      }
+      if (mounted) setState(() => _tracks = []);
     }
   }
 
@@ -149,6 +138,44 @@ class _PlayerScreenState extends State<PlayerScreen> {
               isPlaying: _isPlaying,
               progress: _progress,
               currentTime: _currentTime,
+              totalTime: '3:42',
+              onTap: () {
+                final idx = _tracks.indexWhere((t) => t.id == _activeTrackId);
+                final pt = idx >= 0 ? _tracks[idx] : _tracks.first;
+                final mtList = _tracks.map(_createMeditationTrackFromPlayerTrack).toList();
+                Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (context) => OpenPlayerScreen(
+                      track: _createMeditationTrackFromPlayerTrack(pt),
+                      tracks: mtList,
+                      initialIndex: idx >= 0 ? idx : 0,
+                      isPlaying: _isPlaying,
+                      progress: _progress,
+                      currentTime: _currentTime,
+                      totalTime: '3:42',
+                      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+                      onPrevious: () {
+                        if (idx > 0) setState(() {
+                          _activeTrackId = _tracks[idx - 1].id;
+                          _isPlaying = true;
+                          _progress = 0.0;
+                        });
+                      },
+                      onNext: () {
+                        if (idx < _tracks.length - 1) setState(() {
+                          _activeTrackId = _tracks[idx + 1].id;
+                          _isPlaying = true;
+                          _progress = 0.0;
+                        });
+                      },
+                    ),
+                  ),
+                ).then((newActiveId) {
+                  if (newActiveId != null && mounted) {
+                    setState(() => _activeTrackId = newActiveId);
+                  }
+                });
+              },
               onPlayPause: () {
                 setState(() {
                   _isPlaying = !_isPlaying;

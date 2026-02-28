@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../core/api/content_api.dart';
 import '../../shared/models/meditation_track.dart';
 import '../../shared/widgets/mini_player.dart';
 import '../../shared/widgets/harmony_bottom_nav.dart';
 import '../meditation/meditation_screen.dart';
 import '../tasks/tasks_screen.dart';
 import '../player/player_screen.dart';
+import '../player/open_player_screen.dart';
 
 /// Экран "Сон"
 /// Фон с градиентами точно как в SVG
@@ -45,38 +45,24 @@ class _SleepScreenState extends State<SleepScreen> {
 
   Future<void> _loadTracks() async {
     try {
-      final String response = await rootBundle.loadString('assets/data/sleep_tracks.json');
-      final data = json.decode(response) as Map<String, dynamic>;
-      final List<dynamic> tracksJson = data['tracks'] as List<dynamic>;
-      final allTracks = tracksJson
-          .map((trackJson) => MeditationTrack.fromJson(trackJson as Map<String, dynamic>))
-          .toList();
-      
+      final allTracks = await ContentApi.getSleepTracks();
       final nightmareExclusion = allTracks.where((track) => track.category == 'nightmare_exclusion').toList();
       final otherDirection = allTracks.where((track) => track.category == 'other_direction').toList();
-      
-      print('=== ЗАГРУЗКА ТРЕКОВ СНА ===');
-      print('Всего треков загружено: ${allTracks.length}');
-      print('Треков для исключения кошмаров: ${nightmareExclusion.length}');
-      print('Треков для другого направления: ${otherDirection.length}');
-      
       if (mounted) {
         setState(() {
           _nightmareExclusionTracks = nightmareExclusion;
           _otherDirectionTracks = otherDirection;
           _allTracks = allTracks;
-          
-          // Не устанавливаем активный трек при загрузке - только при нажатии на карточку
           _activeTrackId = null;
           _isPlaying = false;
         });
       }
     } catch (e) {
-      print('Ошибка загрузки треков сна: $e');
       if (mounted) {
         setState(() {
           _nightmareExclusionTracks = [];
           _otherDirectionTracks = [];
+          _allTracks = [];
         });
       }
     }
@@ -359,6 +345,47 @@ class _SleepScreenState extends State<SleepScreen> {
               isPlaying: _isPlaying,
               progress: _progress,
               currentTime: _currentTime,
+              totalTime: '3:42',
+              onTap: () {
+                final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                final t = idx >= 0 ? _allTracks[idx] : _allTracks.first;
+                Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (context) => OpenPlayerScreen(
+                      track: t,
+                      tracks: _allTracks,
+                      initialIndex: idx >= 0 ? idx : 0,
+                      isPlaying: _isPlaying,
+                      progress: _progress,
+                      currentTime: _currentTime,
+                      totalTime: '3:42',
+                      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+                      onPrevious: () {
+                        if (_activeTrackId != null && idx > 0) {
+                          setState(() {
+                            _activeTrackId = _allTracks[idx - 1].id;
+                            _isPlaying = true;
+                            _progress = 0.0;
+                          });
+                        }
+                      },
+                      onNext: () {
+                        if (_activeTrackId != null && idx < _allTracks.length - 1) {
+                          setState(() {
+                            _activeTrackId = _allTracks[idx + 1].id;
+                            _isPlaying = true;
+                            _progress = 0.0;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ).then((newActiveId) {
+                  if (newActiveId != null && mounted) {
+                    setState(() => _activeTrackId = newActiveId);
+                  }
+                });
+              },
               onPlayPause: () {
                 setState(() {
                   _isPlaying = !_isPlaying;

@@ -4,8 +4,15 @@ class AppConstants {
   static const String appName = 'Harmony App';
   static const String appVersion = '1.0.0';
   
-  // API конфигурация
-  static const String baseUrl = 'https://api.harmonyapp.com';
+  // API конфигурация (в продакшене задать через --dart-define или env)
+  static const String baseUrl = String.fromEnvironment(
+    'HARMONY_API_URL',
+    defaultValue: 'https://api.harmonymeditation.online',
+  );
+  static const String appKey = String.fromEnvironment(
+    'HARMONY_APP_KEY',
+    defaultValue: '',
+  );
   static const Duration apiTimeout = Duration(seconds: 30);
   
   // Локальное хранение

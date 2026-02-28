@@ -1,3 +1,5 @@
+import '../../core/constants/app_constants.dart';
+
 class MeditationTrack {
   final String id;
   final String title;
@@ -27,14 +29,35 @@ class MeditationTrack {
     return MeditationTrack(
       id: json['id'] as String,
       title: json['title'] as String,
-      description: json['description'] as String,
-      level: json['level'] as String,
-      image: json['image'] as String,
-      video: json['video'] as String,
-      type: json['type'] as String,
-      category: json['category'] as String,
-      isPremium: json['isPremium'] as bool,
-      isPlaying: json['isPlaying'] as bool,
+      description: json['description'] as String? ?? '',
+      level: json['level'] as String? ?? 'A',
+      image: json['image'] as String? ?? '',
+      video: json['video'] as String? ?? '',
+      type: json['type'] as String? ?? 'meditation',
+      category: json['category'] as String? ?? 'relaxation',
+      isPremium: json['isPremium'] as bool? ?? false,
+      isPlaying: json['isPlaying'] as bool? ?? false,
+    );
+  }
+
+  /// Из ответа API контента (ContentTrack + section.slug как category).
+  factory MeditationTrack.fromApiJson(Map<String, dynamic> json, {required String category}) {
+    final base = AppConstants.baseUrl.replaceFirst(RegExp(r'/$'), '');
+    String image = json['coverUrl'] as String? ?? '';
+    if (image.isNotEmpty && !image.startsWith('http')) image = '$base$image';
+    String video = json['audioUrl'] as String? ?? '';
+    if (video.isNotEmpty && !video.startsWith('http')) video = '$base$video';
+    return MeditationTrack(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      description: json['descriptionShort'] as String? ?? '',
+      level: json['level'] as String? ?? 'A',
+      image: image,
+      video: video,
+      type: 'meditation',
+      category: category,
+      isPremium: json['isPremium'] as bool? ?? false,
+      isPlaying: false,
     );
   }
 
