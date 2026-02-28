@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
@@ -34,15 +36,9 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     // Проверка: есть ли сохранённый аккаунт
     final token = await AuthStorage.getAccessToken();
     if (token != null && token.isNotEmpty) {
-      // Локальный режим (офлайн) — не дергаем API
-      if (token == 'offline') {
-        if (mounted) {
-          Navigator.of(context).pushReplacement(noAnimationRoute(const HomeScreen()));
-        }
-        return;
-      }
       final user = await AuthApi.me(token);
       if (user != null && mounted) {
+        // Токен валиден — сразу на главный экран
         Navigator.of(context).pushReplacement(noAnimationRoute(const HomeScreen()));
         return;
       }
@@ -78,7 +74,6 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Белый фон под изображением
@@ -136,13 +131,13 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                   ),
                   const SizedBox(height: 60), // Увеличен отступ между иконкой и текстами
                   
-                  // Текст "HARMONY" — системный шрифт (без Google Fonts на старте, чтобы не падать из‑за кэша)
+                  // Текст "HARMONY" с шрифтом Unbounded - предзагружен
                   Text(
                     'HARMONY',
-                    style: TextStyle(
+                    style: GoogleFonts.unbounded(
                       fontSize: 36,
-                      fontWeight: FontWeight.w500,
-                      height: 1.0,
+                      fontWeight: FontWeight.w500, // Medium (500)
+                      height: 1.0, // 100%
                       letterSpacing: 0,
                       color: Colors.white,
                       decoration: TextDecoration.none,
@@ -150,14 +145,14 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                   ),
                   const SizedBox(height: 12),
                   
-                  // Текст "ОСОЗНАЙ ЭТОТ МОМЕНТ"
+                  // Текст "ОСОЗНАЙ ЭТОТ МОМЕНТ" с шрифтом Inter - предзагружен
                   Text(
                     'ОСОЗНАЙ ЭТОТ МОМЕНТ',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 17,
-                      fontWeight: FontWeight.w400,
-                      height: 1.0,
-                      letterSpacing: 0.34,
+                      fontWeight: FontWeight.w400, // Regular
+                      height: 1.0, // 100%
+                      letterSpacing: 0.34, // 2% от 17px
                       color: Colors.white,
                       decoration: TextDecoration.none,
                     ),
@@ -168,11 +163,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
           ),
           
           // Кнопка "Далее" сверху (неактивна пока проверяем аккаунт)
-          // Positioned должен быть прямым потомком Stack
-          Positioned(
-            top: 20,
-            right: 20,
-            child: SafeArea(
+          SafeArea(
+            child: Positioned(
+              top: 20,
+              right: 20,
               child: ElevatedButton(
                 onPressed: _checkingAuth ? null : () {
                   Navigator.of(context).pushReplacement(
@@ -200,20 +194,29 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
             ),
           ),
           
-          // Индикатор загрузки внизу (SVG с foreignObject не поддерживается — используем круговой индикатор)
+          // Индикатор загрузки внизу (SVG с угловым градиентом 66x66)
           Positioned(
             bottom: 120,
             left: 0,
             right: 0,
             child: Center(
-              child: SizedBox(
-                width: 66,
-                height: 66,
-                child: RotationTransition(
-                  turns: _rotationController,
-                  child: const CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              child: RotationTransition(
+                turns: _rotationController,
+                child: SvgPicture.asset(
+                  'assets/icons/loading_indicator.svg',
+                  width: 66,
+                  height: 66,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                  placeholderBuilder: (context) => const SizedBox(
+                    width: 66,
+                    height: 66,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
                   ),
                 ),
               ),

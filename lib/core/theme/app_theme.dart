@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Цветовая палитра приложения Harmony
+/// Цветовая палитра приложения Harmony App
 class AppColors {
   // Основные цвета
   static const Color primary = Color(0xFF6366F1);
@@ -46,13 +46,12 @@ class AppColors {
   static const Color darkBorder = Color(0xFF475569);
 }
 
-/// Тема приложения Harmony
+/// Тема приложения Harmony App
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: Colors.white,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.secondary,

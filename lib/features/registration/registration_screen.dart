@@ -5,7 +5,6 @@ import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
-import '../../core/constants/app_constants.dart';
 import '../login/login_screen.dart';
 import '../plan/plan_selection_section.dart';
 
@@ -43,13 +42,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() {
       _errorText = null;
       if (name.isEmpty) _errorText = 'Введите имя';
+      else if (name.length > 50) _errorText = 'Имя не длиннее 50 символов';
       else if (surname.isEmpty) _errorText = 'Введите фамилию';
+      else if (surname.length > 50) _errorText = 'Фамилия не длиннее 50 символов';
       else if (email.isEmpty) _errorText = 'Введите почту';
-      else if (!email.contains('@')) _errorText = 'Введите корректный email';
-      else if (password.length < AppConstants.passwordMinLength) _errorText = 'Пароль не короче ${AppConstants.passwordMinLength} символов';
-      else if (password.length > AppConstants.passwordMaxLength) _errorText = 'Пароль не длиннее ${AppConstants.passwordMaxLength} символов';
-      else if (!RegExp(r'[a-zA-Zа-яА-ЯёЁ]').hasMatch(password)) _errorText = 'Пароль должен содержать хотя бы одну букву';
-      else if (!RegExp(r'[0-9]').hasMatch(password)) _errorText = 'Пароль должен содержать хотя бы одну цифру';
+      else if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) _errorText = 'Введите корректный email';
+      else if (password.length < 8) _errorText = 'Пароль не короче 8 символов';
+      else if (password.length > 128) _errorText = 'Пароль не длиннее 128 символов';
       if (_errorText != null) return;
       _loading = true;
     });
@@ -72,16 +71,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         Navigator.of(context).pushReplacement(
           noAnimationRoute(const PlanSelectionSection()),
         );
-        return;
+      } else {
+        setState(() {
+          _errorText = res.error ?? 'Ошибка регистрации';
+          _loading = false;
+        });
       }
-      setState(() {
-        _errorText = res.error ?? 'Не удалось зарегистрироваться. Проверьте данные и попробуйте снова.';
-        _loading = false;
-      });
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorText = 'Нет соединения с интернетом. Проверьте сеть и попробуйте снова.';
+          _errorText = 'Не удалось подключиться. Проверьте интернет.';
           _loading = false;
         });
       }
