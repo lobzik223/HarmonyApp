@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
@@ -74,24 +73,16 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Белый фон под изображением
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: Colors.white,
-          ),
-          // Фоновое изображение
+          // Фоновое изображение на весь экран
           Positioned.fill(
             child: Image.asset(
               'assets/images/loading_screen.png',
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
-                print('Ошибка загрузки фона: $error');
-                return Container(
-                  color: Colors.white,
-                );
+                return Container(color: Colors.white);
               },
             ),
           ),
@@ -163,10 +154,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
           ),
           
           // Кнопка "Далее" сверху (неактивна пока проверяем аккаунт)
-          SafeArea(
-            child: Positioned(
-              top: 20,
-              right: 20,
+          Positioned(
+            top: 20,
+            right: 20,
+            child: SafeArea(
               child: ElevatedButton(
                 onPressed: _checkingAuth ? null : () {
                   Navigator.of(context).pushReplacement(
@@ -194,29 +185,20 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
             ),
           ),
           
-          // Индикатор загрузки внизу (SVG с угловым градиентом 66x66)
+          // Индикатор загрузки внизу (без SVG, чтобы избежать проблем на Web/iOS)
           Positioned(
             bottom: 120,
             left: 0,
             right: 0,
             child: Center(
-              child: RotationTransition(
-                turns: _rotationController,
-                child: SvgPicture.asset(
-                  'assets/icons/loading_indicator.svg',
-                  width: 66,
-                  height: 66,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
-                  ),
-                  placeholderBuilder: (context) => const SizedBox(
-                    width: 66,
-                    height: 66,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
+              child: SizedBox(
+                width: 66,
+                height: 66,
+                child: RotationTransition(
+                  turns: _rotationController,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
               ),

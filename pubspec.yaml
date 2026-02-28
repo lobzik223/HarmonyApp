@@ -93,7 +93,6 @@ flutter:
     - assets/icons/
     - assets/icons/sleeplogo.png
     - assets/icons/selecticon.png
-    - assets/icons/loading_indicator.svg
     - assets/icons/play_icon.svg
     - assets/icons/pause_button.svg
     - assets/icons/previous_button.svg
