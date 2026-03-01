@@ -429,10 +429,18 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: -20),
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-      decoration: const BoxDecoration(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,10 +477,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: 12),
-          
-          // Подзаголовок "ПОДПИШИСЬ ВСЕГО ОТ 199Р ЗА МЕС."
           Text(
             AppLocalizations.of(context)!.subscribeFrom199.toUpperCase(),
             style: GoogleFonts.inter(
@@ -482,30 +487,25 @@ class _PremiumScreenState extends State<PremiumScreen> {
               color: const Color(0xFF202020),
             ),
           ),
-              
-              const SizedBox(height: 24),
-              
-              _buildSubscriptionCard(
-                title: AppLocalizations.of(context)!.monthPlan,
-                price: AppLocalizations.of(context)!.price265PerMonth,
-                showTryButton: true,
-                onTry: () {},
-                onBuy: () {},
-              ),
-              
-              const SizedBox(height: 16),
-              
-              _buildSubscriptionCard(
-                title: AppLocalizations.of(context)!.yearPlan,
-                price: AppLocalizations.of(context)!.price199PerMonth,
-                priceYear: AppLocalizations.of(context)!.price2390PerYear,
-                showDiscount: true,
-                discountPercent: 20,
-                onBuy: () {},
-              ),
-            ],
+          const SizedBox(height: 28),
+          _buildSubscriptionCard(
+            title: AppLocalizations.of(context)!.monthPlan,
+            price: AppLocalizations.of(context)!.price265PerMonth,
+            showTryButton: true,
+            onBuy: () {},
           ),
-        );
+          const SizedBox(height: 20),
+          _buildSubscriptionCard(
+            title: AppLocalizations.of(context)!.yearPlan,
+            price: AppLocalizations.of(context)!.price199PerMonth,
+            priceYear: AppLocalizations.of(context)!.price2390PerYear,
+            showDiscount: true,
+            discountPercent: 20,
+            onBuy: () {},
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSubscriptionCard({
@@ -515,113 +515,126 @@ class _PremiumScreenState extends State<PremiumScreen> {
     bool showTryButton = false,
     bool showDiscount = false,
     int? discountPercent,
-    VoidCallback? onTry,
     required VoidCallback onBuy,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF44AAED),
-            Color(0xFF46E4E3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final darkGrey = const Color(0xFF37474F);
+    final lightGrey = const Color(0xFF78909C);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Белая карточка с скруглёнными углами
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        price,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                        ),
-                      ),
-                      if (priceYear != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          priceYear,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (showTryButton)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFB3E5FC),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context)!.tryButton,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0277BD),
-                        ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: darkGrey,
                       ),
                     ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      price,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: darkGrey,
+                      ),
+                    ),
+                    if (priceYear != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        priceYear,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: lightGrey,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(width: 12),
               GestureDetector(
                 onTap: onBuy,
                 child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
                   ),
-                  child: Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.buy,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF44AAED),
-                      ),
+                  child: Text(
+                    AppLocalizations.of(context)!.buy,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: darkGrey,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          
-          // Бейдж "Выгода 20%" — жёлтый, тёмный текст (как на примере)
-          if (showDiscount && discountPercent != null)
-            Positioned(
-              top: 0,
-              right: 0,
+        ),
+        // Бейдж сверху по середине (половина в карточке, половина над ней)
+        if (showTryButton)
+          Positioned(
+            top: -12,
+            left: 0,
+            right: 0,
+            child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFD54F),
+                  color: const Color(0xFF81D4FA).withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  AppLocalizations.of(context)!.tryButton,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (showDiscount && discountPercent != null)
+          Positioned(
+            top: -12,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFB300),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -629,14 +642,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF202020),
-                    letterSpacing: 0.5,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
