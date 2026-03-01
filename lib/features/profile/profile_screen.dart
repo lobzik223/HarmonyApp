@@ -1,11 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../main.dart';
 import '../premium/premium_screen.dart';
 import '../loading/loading_screen.dart';
+import '../legal/legal_text_screen.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/auth/auth_storage.dart';
+import '../../core/api/auth_api.dart';
 
 /// Экран "Профиль"
 /// Фон: assets/images/fon1.jpg
@@ -17,12 +22,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Данные профиля
   String _userName = 'Пользователь';
+  String _userSurname = '';
   String _userEmail = 'user@example.com';
   bool _notificationsEnabled = true;
-  bool _privacyMode = false;
-  bool _dataSync = true;
+  String? _profilePhotoPath;
 
   @override
   void initState() {
@@ -33,15 +37,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final authName = await AuthStorage.getUserName();
-      final authEmail = await AuthStorage.getUserEmail();
-      setState(() {
-        _userName = authName ?? prefs.getString('user_name') ?? 'Пользователь';
-        _userEmail = authEmail ?? prefs.getString('user_email') ?? 'user@example.com';
-        _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-        _privacyMode = prefs.getBool('privacy_mode') ?? false;
-        _dataSync = prefs.getBool('data_sync') ?? true;
-      });
+      final token = await AuthStorage.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        final user = await AuthApi.me(token);
+        if (user != null) {
+          final name = user['name'] as String? ?? '';
+          final surname = user['surname'] as String? ?? '';
+          final email = user['email'] as String? ?? '';
+          await AuthStorage.saveUserProfile(name: name, surname: surname);
+          if (mounted) {
+            setState(() {
+              _userName = name.isNotEmpty ? name : (await AuthStorage.getUserName() ?? 'Пользователь');
+              _userSurname = surname;
+              _userEmail = email.isNotEmpty ? email : (await AuthStorage.getUserEmail() ?? '');
+            });
+          }
+        }
+      }
+      if (mounted) {
+        final authName = await AuthStorage.getUserName();
+        final authEmail = await AuthStorage.getUserEmail();
+        final authSurname = await AuthStorage.getUserSurname();
+        final photoPath = await AuthStorage.getProfilePhotoPath();
+        setState(() {
+          _userName = authName ?? prefs.getString('user_name') ?? _userName;
+          _userSurname = authSurname ?? _userSurname;
+          _userEmail = authEmail ?? prefs.getString('user_email') ?? _userEmail;
+          _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+          _profilePhotoPath = photoPath;
+        });
+      }
     } catch (e) {
       print('Ошибка загрузки данных профиля: $e');
     }
@@ -53,9 +78,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await prefs.setString('user_name', _userName);
       await prefs.setString('user_email', _userEmail);
       await prefs.setBool('notifications_enabled', _notificationsEnabled);
-      await prefs.setBool('privacy_mode', _privacyMode);
-      await prefs.setBool('data_sync', _dataSync);
-      // Профиль синхронизируется с локальными настройками; для обновления на сервере — отдельный API /api/auth/me PATCH
     } catch (e) {
       print('Ошибка сохранения данных профиля: $e');
     }
@@ -167,10 +189,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileDataCard(),
                   const SizedBox(height: 20),
                   
-                  // Раздел "Конфиденциальность"
-                  _buildSectionTitle('Конфиденциальность'),
+                  // Политика конфиденциальности и Пользовательское соглашение
+                  _buildSectionTitle('Документы'),
                   const SizedBox(height: 12),
-                  _buildPrivacyCard(),
+                  _buildLegalCard(),
                   const SizedBox(height: 20),
                   
                   // Раздел "Уведомления"
@@ -224,39 +246,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: Row(
             children: [
-              // Аватар
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: ClipOval(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                    ),
+              // Аватар (локальное фото или заглушка)
+              GestureDetector(
+                onTap: _pickProfilePhoto,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: ClipOval(
+                    child: _profilePhotoPath != null
+                        ? Image.file(
+                            File(_profilePhotoPath!),
+                            fit: BoxFit.cover,
+                            width: 80,
+                            height: 80,
+                            errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(),
+                          )
+                        : _buildAvatarPlaceholder(),
                   ),
                 ),
               ),
               const SizedBox(width: 16),
-              // Имя и email
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _userName,
+                      _userSurname.isEmpty ? _userName : '$_userName $_userSurname'.trim(),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -275,9 +294,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              // Кнопка редактирования
               GestureDetector(
-                onTap: () => _showEditProfileDialog(),
+                onTap: () => _showEditNameDialog(),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -294,6 +312,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAvatarPlaceholder() {
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.person, size: 40, color: Colors.white),
       ),
     );
   }
@@ -315,15 +346,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildSettingItem(
                 icon: Icons.person_outline,
                 title: 'Имя',
-                value: _userName,
+                value: _userSurname.isEmpty ? _userName : '$_userName $_userSurname'.trim(),
                 onTap: () => _showEditNameDialog(),
               ),
               const Divider(color: Colors.white24, height: 24),
               _buildSettingItem(
                 icon: Icons.email_outlined,
-                title: 'Email',
+                title: 'Почта',
                 value: _userEmail,
-                onTap: () => _showEditEmailDialog(),
+                onTap: null,
               ),
             ],
           ),
@@ -332,7 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPrivacyCard() {
+  Widget _buildLegalCard() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
@@ -346,27 +377,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: Column(
             children: [
-              _buildSwitchItem(
-                icon: Icons.lock_outline,
-                title: 'Режим конфиденциальности',
-                value: _privacyMode,
-                onChanged: (value) {
-                  setState(() {
-                    _privacyMode = value;
-                  });
-                  _saveProfileData();
+              _buildSettingItem(
+                icon: Icons.privacy_tip_outlined,
+                title: 'Политика конфиденциальности',
+                value: '',
+                onTap: () {
+                  Navigator.of(context).push(
+                    noAnimationRoute(const LegalTextScreen(
+                      title: 'Политика конфиденциальности',
+                      body: 'Здесь будет текст политики конфиденциальности.',
+                    )),
+                  );
                 },
               ),
               const Divider(color: Colors.white24, height: 24),
-              _buildSwitchItem(
-                icon: Icons.sync,
-                title: 'Синхронизация данных',
-                value: _dataSync,
-                onChanged: (value) {
-                  setState(() {
-                    _dataSync = value;
-                  });
-                  _saveProfileData();
+              _buildSettingItem(
+                icon: Icons.description_outlined,
+                title: 'Пользовательское соглашение',
+                value: '',
+                onTap: () {
+                  Navigator.of(context).push(
+                    noAnimationRoute(const LegalTextScreen(
+                      title: 'Пользовательское соглашение',
+                      body: 'Здесь будет текст пользовательского соглашения.',
+                    )),
+                  );
                 },
               ),
             ],
@@ -460,7 +495,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     required String title,
     required String value,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -488,11 +523,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           const SizedBox(width: 8),
-          const Icon(
-            Icons.chevron_right,
-            size: 20,
-            color: Colors.white70,
-          ),
+          if (onTap != null)
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: Colors.white70,
+            )
+          else
+            const Icon(
+              Icons.lock_outline,
+              size: 18,
+              color: Colors.white54,
+            ),
         ],
       ),
     );
@@ -566,52 +608,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showEditProfileDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _EditProfileDialog(
-        currentName: _userName,
-        currentEmail: _userEmail,
-        onSave: (name, email) {
-          setState(() {
-            _userName = name;
-            _userEmail = email;
-          });
-          _saveProfileData();
-        },
-      ),
-    );
+  Future<void> _pickProfilePhoto() async {
+    final picker = ImagePicker();
+    final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      const filename = 'profile_photo.jpg';
+      final dest = File('${dir.path}/$filename');
+      await File(file.path).copy(dest.path);
+      await AuthStorage.setProfilePhotoPath(dest.path);
+      if (mounted) setState(() => _profilePhotoPath = dest.path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось сохранить фото: $e')),
+        );
+      }
+    }
   }
 
   void _showEditNameDialog() {
-    final controller = TextEditingController(text: _userName);
+    final displayName = _userSurname.isEmpty ? _userName : '$_userName $_userSurname'.trim();
+    final controller = TextEditingController(text: displayName);
     showDialog(
       context: context,
       builder: (context) => _EditDialog(
         title: 'Изменить имя',
         controller: controller,
-        onSave: (value) {
-          setState(() {
-            _userName = value;
-          });
-          _saveProfileData();
-        },
-      ),
-    );
-  }
-
-  void _showEditEmailDialog() {
-    final controller = TextEditingController(text: _userEmail);
-    showDialog(
-      context: context,
-      builder: (context) => _EditDialog(
-        title: 'Изменить email',
-        controller: controller,
-        onSave: (value) {
-          setState(() {
-            _userEmail = value;
-          });
-          _saveProfileData();
+        onSave: (value) async {
+          final name = value.trim();
+          if (name.isEmpty) return;
+          final token = await AuthStorage.getAccessToken();
+          if (token == null || token.isEmpty) {
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Нужно войти в аккаунт')),
+            );
+            return;
+          }
+          final parts = name.split(RegExp(r'\s+'));
+          final newName = parts.isNotEmpty ? parts.first : name;
+          final newSurname = parts.length > 1 ? parts.sublist(1).join(' ') : _userSurname;
+          final result = await AuthApi.updateProfile(token, name: newName, surname: newSurname);
+          if (!mounted) return;
+          if (result.success && result.name != null) {
+            await AuthStorage.saveUserProfile(name: result.name, surname: result.surname ?? '');
+            setState(() {
+              _userName = result.name!;
+              _userSurname = result.surname ?? '';
+            });
+            _saveProfileData();
+            Navigator.of(context).pop();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(result.error ?? 'Ошибка сохранения')),
+            );
+          }
         },
       ),
     );
@@ -677,135 +729,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// Диалог редактирования профиля
-class _EditProfileDialog extends StatefulWidget {
-  final String currentName;
-  final String currentEmail;
-  final Function(String, String) onSave;
-
-  const _EditProfileDialog({
-    required this.currentName,
-    required this.currentEmail,
-    required this.onSave,
-  });
-
-  @override
-  State<_EditProfileDialog> createState() => _EditProfileDialogState();
-}
-
-class _EditProfileDialogState extends State<_EditProfileDialog> {
-  late TextEditingController _nameController;
-  late TextEditingController _emailController;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.currentName);
-    _emailController = TextEditingController(text: widget.currentEmail);
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Редактировать профиль',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _nameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Имя',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white54),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white54),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Отмена', style: TextStyle(color: Colors.white70)),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        widget.onSave(_nameController.text, _emailController.text);
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
-                      ),
-                      child: const Text('Сохранить'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // Диалог редактирования одного поля
 class _EditDialog extends StatefulWidget {
   final String title;
   final TextEditingController controller;
-  final Function(String) onSave;
+  final Future<void> Function(String) onSave;
 
   const _EditDialog({
     required this.title,
@@ -868,9 +796,8 @@ class _EditDialogState extends State<_EditDialog> {
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: () {
-                        widget.onSave(widget.controller.text);
-                        Navigator.of(context).pop();
+                      onPressed: () async {
+                        await widget.onSave(widget.controller.text);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,

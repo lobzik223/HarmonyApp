@@ -87,6 +87,34 @@ class AuthApi {
     return json.decode(res.body) as Map<String, dynamic>?;
   }
 
+  /// PATCH /api/auth/me — обновление имени/фамилии (имя не чаще раз в 14 дней)
+  static Future<UpdateProfileResult> updateProfile(
+    String accessToken, {
+    required String name,
+    required String surname,
+  }) async {
+    final headers = {..._baseHeaders, 'Authorization': 'Bearer $accessToken'};
+    final res = await http
+        .patch(
+          Uri.parse('$_base$_authPrefix/me'),
+          headers: headers,
+          body: jsonEncode({'name': name, 'surname': surname}),
+        )
+        .timeout(AppConstants.apiTimeout);
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final map = json.decode(res.body) as Map<String, dynamic>?;
+      final user = map?['user'] as Map<String, dynamic>?;
+      return UpdateProfileResult(
+        success: true,
+        name: user?['name'] as String? ?? name,
+        surname: user?['surname'] as String? ?? surname,
+      );
+    }
+    final map = json.decode(res.body) as Map<String, dynamic>?;
+    final msg = map?['message'] as String? ?? map?['error']?.toString() ?? 'Ошибка ${res.statusCode}';
+    return UpdateProfileResult(success: false, error: msg);
+  }
+
   static AuthResponse _parseAuthResponse(http.Response res) {
     dynamic body;
     try {
@@ -130,6 +158,20 @@ class AuthResponse {
     this.refreshToken,
     this.userEmail,
     this.userName,
+    this.error,
+  });
+}
+
+class UpdateProfileResult {
+  final bool success;
+  final String? name;
+  final String? surname;
+  final String? error;
+
+  UpdateProfileResult({
+    required this.success,
+    this.name,
+    this.surname,
     this.error,
   });
 }

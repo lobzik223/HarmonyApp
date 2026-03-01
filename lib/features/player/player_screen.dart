@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
+import '../../core/storage/recent_tracks_storage.dart';
 import '../../main.dart';
 import '../../shared/models/player_track.dart';
 import '../../shared/models/meditation_track.dart';
@@ -22,6 +23,7 @@ class PlayerScreen extends StatefulWidget {
 
 class _PlayerScreenState extends State<PlayerScreen> {
   List<PlayerTrack> _tracks = [];
+  List<PlayerTrack> _recentTracks = [];
   String? _activeTrackId;
   bool _isPlaying = false;
   double _progress = 0.0;
@@ -45,10 +47,24 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 artist: t.description.isNotEmpty ? t.description : 'Harmony',
               ))
           .toList();
-      if (mounted) setState(() => _tracks = tracks);
+      final recent = await RecentTracksStorage.getRecentTracks();
+      if (mounted) setState(() {
+        _tracks = tracks;
+        _recentTracks = recent;
+      });
     } catch (e) {
-      if (mounted) setState(() => _tracks = []);
+      if (mounted) setState(() {
+        _tracks = [];
+        _recentTracks = [];
+      });
     }
+  }
+
+  void _onTrackPlay(PlayerTrack track) {
+    RecentTracksStorage.addRecentTrack(track).then((_) async {
+      final recent = await RecentTracksStorage.getRecentTracks();
+      if (mounted) setState(() => _recentTracks = recent);
+    });
   }
 
   void _handleBottomNavTap(HarmonyTab tab) {
@@ -85,7 +101,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
+          // Фон — чуть опущен вниз
+          Positioned(
+            top: 48,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: Image.asset(
               'assets/images/playerfon.png',
               fit: BoxFit.cover,
@@ -103,21 +124,56 @@ class _PlayerScreenState extends State<PlayerScreen> {
             ),
           ),
 
-          // Скроллируемый контент с карточками треков
+          // Заголовок «Прослушанные» сверху по центру (как «Главная»)
           Positioned(
             top: 62,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                'Прослушанные',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white,
+                  decoration: TextDecoration.none,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+          ),
+
+          // Скроллируемый контент: прослушанные (до 15) + все треки
+          Positioned(
+            top: 120,
             left: 0,
             right: 0,
             bottom: bottomPadding,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 300),
-                  
-                  // Список карточек треков
+                  // Последние 15 прослушанных
+                  if (_recentTracks.isNotEmpty) ...[
+                    ..._recentTracks.map((track) {
+                      final isActive = _activeTrackId == track.id;
+                      final isPlaying = isActive && _isPlaying;
+                      return _buildTrackCard(track, isActive, isPlaying);
+                    }),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Все треки',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.95),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  // Список всех треков
                   ..._tracks.asMap().entries.map((entry) {
                     final track = entry.value;
                     final isActive = _activeTrackId == track.id;
@@ -170,9 +226,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       },
                     ),
                   ),
-                ).then((newActiveId) {
+                ).then((newActiveId) async {
                   if (newActiveId != null && mounted) {
                     setState(() => _activeTrackId = newActiveId);
+                    final idx = _tracks.indexWhere((t) => t.id == newActiveId);
+                    if (idx >= 0) {
+                      await RecentTracksStorage.addRecentTrack(_tracks[idx]);
+                      if (mounted) {
+                        final recent = await RecentTracksStorage.getRecentTracks();
+                        setState(() => _recentTracks = recent);
+                      }
+                    }
                   }
                 });
               },
@@ -252,6 +316,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             _progress = 0.0;
           }
         });
+        _onTrackPlay(track);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

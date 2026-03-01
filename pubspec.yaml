@@ -43,6 +43,10 @@ dependencies:
   # Локальное хранение данных (только SharedPreferences)
   shared_preferences: ^2.3.2
   
+  # Фото профиля (локально на устройстве)
+  image_picker: ^1.0.7
+  path_provider: ^2.1.2
+  
   # Анимации и UI эффекты
   shimmer: ^3.0.0
   flutter_staggered_animations: ^1.1.1
