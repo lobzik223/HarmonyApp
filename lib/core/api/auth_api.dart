@@ -95,14 +95,17 @@ class AuthApi {
     return _parseAuthResponse(res);
   }
 
-  /// GET /api/auth/me — проверка токена (Authorization: Bearer)
+  /// GET /api/auth/me — проверка токена (Authorization: Bearer).
+  /// Бэкенд возвращает { user: { id, email, name, surname, ... } } — отдаём вложенный объект user.
   static Future<Map<String, dynamic>?> me(String accessToken) async {
     final headers = {..._baseHeaders, 'Authorization': 'Bearer $accessToken'};
     final res = await http
         .get(Uri.parse('$_base$_authPrefix/me'), headers: headers)
         .timeout(AppConstants.apiTimeout);
     if (res.statusCode != 200) return null;
-    return json.decode(res.body) as Map<String, dynamic>?;
+    final body = json.decode(res.body) as Map<String, dynamic>?;
+    final user = body?['user'] as Map<String, dynamic>?;
+    return user;
   }
 
   /// PATCH /api/auth/me — обновление имени/фамилии (имя не чаще раз в 14 дней)
