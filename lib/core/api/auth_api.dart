@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 import '../constants/app_constants.dart';
 
@@ -25,6 +26,12 @@ class AuthApi {
     required String email,
     required String password,
   }) async {
+    if (kDebugMode) {
+      debugPrint(
+        '[AUTH][REGISTER][REQ] email=${email.trim().toLowerCase()} '
+        'passLen=${password.length} appKeySet=${_key.isNotEmpty} url=$_base$_authPrefix/register',
+      );
+    }
     final res = await http
         .post(
           Uri.parse('$_base$_authPrefix/register'),
@@ -37,6 +44,9 @@ class AuthApi {
           }),
         )
         .timeout(AppConstants.apiTimeout);
+    if (kDebugMode) {
+      debugPrint('[AUTH][REGISTER][RES] status=${res.statusCode} body=${res.body}');
+    }
     return _parseAuthResponse(res);
   }
 
@@ -45,6 +55,12 @@ class AuthApi {
     required String email,
     required String password,
   }) async {
+    if (kDebugMode) {
+      debugPrint(
+        '[AUTH][LOGIN][REQ] email=${email.trim().toLowerCase()} '
+        'passLen=${password.length} appKeySet=${_key.isNotEmpty} url=$_base$_authPrefix/login',
+      );
+    }
     final res = await http
         .post(
           Uri.parse('$_base$_authPrefix/login'),
@@ -55,6 +71,9 @@ class AuthApi {
           }),
         )
         .timeout(AppConstants.apiTimeout);
+    if (kDebugMode) {
+      debugPrint('[AUTH][LOGIN][RES] status=${res.statusCode} body=${res.body}');
+    }
     return _parseAuthResponse(res);
   }
 

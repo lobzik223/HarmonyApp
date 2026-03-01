@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui' as ui;
 import '../../main.dart';
@@ -34,6 +35,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Future<void> _onRegister() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future.delayed(const Duration(milliseconds: 400));
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _doRegister();
+    });
+  }
+
+  void _doRegister() {
     final name = _nameController.text.trim();
     final surname = _surnameController.text.trim();
     final email = _emailController.text.trim();
@@ -47,12 +57,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       else if (surname.length > 50) _errorText = 'Фамилия не длиннее 50 символов';
       else if (email.isEmpty) _errorText = 'Введите почту';
       else if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) _errorText = 'Введите корректный email';
-      else if (password.length < 8) _errorText = 'Пароль не короче 8 символов';
+      else if (password.isEmpty) _errorText = 'Введите пароль';
       else if (password.length > 128) _errorText = 'Пароль не длиннее 128 символов';
       if (_errorText != null) return;
       _loading = true;
     });
 
+    if (_errorText != null) return;
+    _registerApi(name, surname, email, password);
+  }
+
+  Future<void> _registerApi(String name, String surname, String email, String password) async {
     try {
       final res = await AuthApi.register(
         name: name,
@@ -72,8 +87,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           noAnimationRoute(const PlanSelectionSection()),
         );
       } else {
+        String err = res.error ?? 'Ошибка регистрации';
+        if (err.toLowerCase().contains('8') && err.toLowerCase().contains('символ')) {
+          err = 'Сервер отклонил пароль как короткий. Отправленная длина: ${password.length}.';
+        }
         setState(() {
-          _errorText = res.error ?? 'Ошибка регистрации';
+          _errorText = err;
           _loading = false;
         });
       }

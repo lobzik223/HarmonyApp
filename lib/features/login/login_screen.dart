@@ -30,6 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _onLogin() async {
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -37,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorText = null;
       if (email.isEmpty) _errorText = 'Введите почту';
       else if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) _errorText = 'Введите корректный email';
-      else if (password.length < 8) _errorText = 'Пароль не короче 8 символов';
+      else if (password.isEmpty) _errorText = 'Введите пароль';
       else if (password.length > 128) _errorText = 'Пароль не длиннее 128 символов';
       if (_errorText != null) return;
       _loading = true;
@@ -57,8 +61,12 @@ class _LoginScreenState extends State<LoginScreen> {
           noAnimationRoute(const PlanSelectionSection()),
         );
       } else {
+        String err = res.error ?? 'Неверная почта или пароль';
+        if (err.toLowerCase().contains('8') && err.toLowerCase().contains('символ')) {
+          err = 'Бэкенд отклонил пароль как короткий. Отправленная длина: ${password.length}.';
+        }
         setState(() {
-          _errorText = res.error ?? 'Неверная почта или пароль';
+          _errorText = err;
           _loading = false;
         });
       }

@@ -25,8 +25,8 @@ class HarmonyBottomNav extends StatelessWidget {
   /// Когда true — прозрачное «стеклянное» меню (для открытого полноэкранного плеера), иконка плеера подсвечена.
   final bool glassStyle;
 
-  static const double _barHeight = 62.0;
-  static const double _backgroundOffset = 5.0;
+  static const double _barHeight = 52.0;
+  static const double _backgroundOffset = 2.0;
 
   @override
   Widget build(BuildContext context) {
@@ -91,45 +91,13 @@ class HarmonyBottomNav extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: HarmonyTab.values
                     .map(
-                      (tab) {
-                        // Сдвигаем иконки чуть правее (левее от исходной позиции)
-                        final bool isPlayer = tab == HarmonyTab.player;
-                        final bool isSleep = tab == HarmonyTab.sleep;
-                        final bool isMeditation = tab == HarmonyTab.meditation;
-                        final bool isTasks = tab == HarmonyTab.tasks;
-                        final Widget navItem = _HarmonyNavItem(
-                          tab: tab,
-                          isSelected: tab == activeTab,
-                          onTap: onTabSelected,
-                          highlightHomeIdle: highlightHomeIdle,
-                          glowWhenPlayerActive: glassStyle && tab == HarmonyTab.player && tab == activeTab,
-                        );
-                        if (isMeditation) {
-                          return Transform.translate(
-                            offset: const Offset(-5, 0), // Сдвиг влево на 5 пикселей
-                            child: navItem,
-                          );
-                        }
-                        if (isPlayer) {
-                          return Transform.translate(
-                            offset: const Offset(6, 0), // Сдвиг вправо на 6 пикселей
-                            child: navItem,
-                          );
-                        }
-                        if (isSleep) {
-                          return Transform.translate(
-                            offset: const Offset(-5, 0), // Сдвиг влево на 5 пикселей
-                            child: navItem,
-                          );
-                        }
-                        if (isTasks) {
-                          return Transform.translate(
-                            offset: const Offset(6, 0), // Сдвиг вправо на 6 пикселей
-                            child: navItem,
-                          );
-                        }
-                        return navItem;
-                      },
+                      (tab) => _HarmonyNavItem(
+                        tab: tab,
+                        isSelected: tab == activeTab,
+                        onTap: onTabSelected,
+                        highlightHomeIdle: highlightHomeIdle,
+                        glowWhenPlayerActive: glassStyle && tab == HarmonyTab.player && tab == activeTab,
+                      ),
                     )
                     .toList(),
               ),
@@ -339,17 +307,17 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
     );
     path.cubicTo(
       215 * width / 375,
-      44.2805 * height / h,
+      39.0 * height / h,
       202.464 * width / 375,
-      56.8165 * height / h,
+      50.0 * height / h,
       187 * width / 375,
-      56.8165 * height / h,
+      50.0 * height / h,
     );
     path.cubicTo(
       171.536 * width / 375,
-      56.8165 * height / h,
+      50.0 * height / h,
       159 * width / 375,
-      44.2805 * height / h,
+      39.0 * height / h,
       159 * width / 375,
       28.8165 * height / h,
     );
@@ -384,8 +352,8 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
   Path _buildDynamicPath(Size size) {
     final tabs = HarmonyTab.values.length;
     final tabWidth = size.width / tabs;
-    final notchRadius = 20.0;
-    final notchDepth = 18.0;
+    final notchRadius = 14.0;
+    final notchDepth = 12.0;
     final activeIndex = HarmonyTab.values.indexOf(activeTab).clamp(0, tabs - 1);
     final isEdge = activeIndex == 0 || activeIndex == tabs - 1;
     final safeEdge = isEdge ? 8.0 : 18.0;
@@ -451,15 +419,14 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
   Path _buildLeadingEdgePath(Size size) {
     final activeIndex = HarmonyTab.values.indexOf(activeTab);
     
-    // Точный путь из SVG - масштабируем под текущий размер
     const double refWidth = 375.0;
-    const double refHeight = 62.0; // Высота viewBox из SVG
+    const double refHeight = 62.0; // масштаб пути под size
     final double sx = size.width / refWidth;
     final double sy = size.height / refHeight;
 
     // Вырез для медитации (индекс 0) - точный путь из предоставленного SVG
     if (activeIndex == 0) {
-      const double meditationOffset = -3.0; // Сдвиг выреза влево (соответствует сдвигу иконки)
+      const double meditationOffset = 3.0; // Сдвиг выреза вправо — центровка круга
       final double syNew = size.height / 71.0; // viewBox высота 62
       
       // Точный путь из SVG: M38 57.8165C54.0163 57.8165 67 44.8328 67 28.8165...
@@ -544,7 +511,7 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
     } else if (activeIndex == 1) {
       // Вырез для сна (вторая вкладка) - уменьшенная глубина, сдвинуто влево
       // Иконка сна сдвинута на 5px влево, вырез тоже сдвигаем
-      const double sleepOffset = -5.0; // Сдвиг иконки влево
+      const double sleepOffset = 1.5; // Чуть правее — центровка круга
       final path = Path()
         // Вырез для сна - начинается с нижней точки круга (поднято выше), сдвинуто влево
         ..moveTo((113 + sleepOffset) * sx, 48 * sy) // Сдвинуто влево
@@ -640,7 +607,7 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
       final double syPlayer = size.height / refHeightPlayer;
       // Вырез для плеера - уменьшенная глубина (поднято выше), сдвинуто правее
       // Иконка плеера сдвинута на 6px вправо, вырез тоже сдвигаем
-      const double playerOffset = 6.0; // Сдвиг иконки вправо
+      const double playerOffset = -3.5; // Чуть левее — центровка круга
       
       final path = Path()
         ..moveTo((262 + playerOffset) * sx, 50 * syPlayer) // Сдвинуто правее
@@ -718,8 +685,8 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
 
       return path;
     } else if (activeIndex == 4) {
-      // Вырез для tasks (книга) - точный путь из предоставленного SVG
-      const double tasksOffset = 2.0; // Сдвиг выреза вправо (соответствует сдвигу иконки)
+      // Вырез для tasks (Трекер занятий) - сдвиг влево, форма не меняется
+      const double tasksOffset = -8.0; // Сдвиг влево — чуть правее для центровки
       final double syNew = size.height / 73.0; // viewBox высота 63
       
       final path = Path()
