@@ -132,6 +132,7 @@ class AuthApi {
         refreshToken: map['refreshToken'] as String? ?? '',
         userEmail: user?['email'] as String? ?? '',
         userName: user?['name'] as String? ?? '',
+        userSurname: user?['surname'] as String? ?? '',
       );
     }
     final map = body is Map ? body as Map<String, dynamic> : null;
@@ -150,6 +151,7 @@ class AuthResponse {
   final String? refreshToken;
   final String? userEmail;
   final String? userName;
+  final String? userSurname;
   final String? error;
 
   AuthResponse({
@@ -158,6 +160,7 @@ class AuthResponse {
     this.refreshToken,
     this.userEmail,
     this.userName,
+    this.userSurname,
     this.error,
   });
 }

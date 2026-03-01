@@ -81,7 +81,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           accessToken: res.accessToken!,
           refreshToken: res.refreshToken!,
           userEmail: res.userEmail,
-          userName: res.userName ?? '$name $surname',
+          userName: res.userName ?? name,
+          userSurname: res.userSurname ?? surname,
         );
         Navigator.of(context).pushReplacement(
           noAnimationRoute(const PlanSelectionSection()),

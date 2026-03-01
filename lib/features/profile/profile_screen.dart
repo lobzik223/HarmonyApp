@@ -46,22 +46,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final email = user['email'] as String? ?? '';
           await AuthStorage.saveUserProfile(name: name, surname: surname);
           if (mounted) {
-            setState(() {
-              _userName = name.isNotEmpty ? name : (await AuthStorage.getUserName() ?? 'Пользователь');
-              _userSurname = surname;
-              _userEmail = email.isNotEmpty ? email : (await AuthStorage.getUserEmail() ?? '');
-            });
+            final fallbackName = await AuthStorage.getUserName() ?? 'Пользователь';
+            final fallbackEmail = await AuthStorage.getUserEmail() ?? '';
+            if (mounted) {
+              setState(() {
+                _userName = name.isNotEmpty ? name : fallbackName;
+                _userSurname = surname;
+                _userEmail = email.isNotEmpty ? email : fallbackEmail;
+              });
+            }
           }
         }
       }
       if (mounted) {
-        final authName = await AuthStorage.getUserName();
+        String? authName = await AuthStorage.getUserName();
         final authEmail = await AuthStorage.getUserEmail();
-        final authSurname = await AuthStorage.getUserSurname();
+        String? authSurname = await AuthStorage.getUserSurname();
         final photoPath = await AuthStorage.getProfilePhotoPath();
+        // Если фамилия не сохранена, но в имени есть пробел (например, из Google/Apple) — разбиваем
+        if ((authSurname == null || authSurname.isEmpty) &&
+            authName != null &&
+            authName.trim().contains(' ')) {
+          final parts = authName.trim().split(RegExp(r'\s+'));
+          authName = parts.first;
+          authSurname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+          await AuthStorage.saveUserProfile(name: authName, surname: authSurname);
+        }
         setState(() {
           _userName = authName ?? prefs.getString('user_name') ?? _userName;
-          _userSurname = authSurname ?? _userSurname;
+          _userSurname = authSurname ?? _userSurname ?? '';
           _userEmail = authEmail ?? prefs.getString('user_email') ?? _userEmail;
           _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
           _profilePhotoPath = photoPath;
@@ -78,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await prefs.setString('user_name', _userName);
       await prefs.setString('user_email', _userEmail);
       await prefs.setBool('notifications_enabled', _notificationsEnabled);
+      await AuthStorage.saveUserProfile(name: _userName, surname: _userSurname);
     } catch (e) {
       print('Ошибка сохранения данных профиля: $e');
     }

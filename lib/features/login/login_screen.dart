@@ -56,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
           refreshToken: res.refreshToken!,
           userEmail: res.userEmail,
           userName: res.userName,
+          userSurname: res.userSurname,
         );
         Navigator.of(context).pushReplacement(
           noAnimationRoute(const PlanSelectionSection()),
