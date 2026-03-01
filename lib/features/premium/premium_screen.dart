@@ -370,88 +370,118 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  Widget _buildSubscriptionSection() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.95),
-            borderRadius: BorderRadius.circular(20),
+  Widget _buildPremiumBadge() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Круг с логотипом Harmony (светло-голубой)
+        Container(
+          width: 28,
+          height: 28,
+          decoration: const BoxDecoration(
+            color: Color(0xFF5BB8E8),
+            shape: BoxShape.circle,
           ),
-          child: Column(
+          child: ClipOval(
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              child: Image.asset(
+                'assets/icons/harmonyicon.png',
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: -4),
+        // Pill с текстом PREMIUM (градиент голубой → бирюзовый)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF5BB8E8),
+                Color(0xFF46E4E3),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Text(
+            AppLocalizations.of(context)!.premiumBadge,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubscriptionSection() {
+    final fullText = AppLocalizations.of(context)!.feelFullHarmonyWith;
+    final line1 = fullText
+        .replaceAll(RegExp(r' ГАРМОНИЮ С$| HARMONY WITH$'), '')
+        .trim();
+    final line2 = fullText.contains('ГАРМОНИЮ С') ? 'ГАРМОНИЮ С' : (fullText.contains('HARMONY WITH') ? 'HARMONY WITH' : '');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Заголовок: "ПОЧУВСТВУЙ ПОЛНУЮ" / "ГАРМОНИЮ С" + знак PREMIUM
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Заголовок "ПОЧУВСТВУЙ ПОЛНУЮ ГАРМОНИЮ С"
+              Text(
+                line1,
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                  color: const Color(0xFF202020),
+                ),
+              ),
+              const SizedBox(height: 4),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context)!.feelFullHarmonyWith,
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                        color: Colors.black,
-                      ),
+                  Text(
+                    line2,
+                    style: GoogleFonts.inter(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      color: const Color(0xFF202020),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Бейдж PREMIUM
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF44AAED),
-                          Color(0xFF46E4E3),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'H',
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          AppLocalizations.of(context)!.premiumBadge,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(width: 8),
+                  _buildPremiumBadge(),
                 ],
               ),
-              
-              const SizedBox(height: 12),
-              
-              // Описание
-              Text(
-                AppLocalizations.of(context)!.subscribeFrom199,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  height: 1.2,
-                  color: Colors.black87,
-                ),
-              ),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Подзаголовок "ПОДПИШИСЬ ВСЕГО ОТ 199Р ЗА МЕС."
+          Text(
+            AppLocalizations.of(context)!.subscribeFrom199.toUpperCase(),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              height: 1.2,
+              color: const Color(0xFF202020),
+            ),
+          ),
               
               const SizedBox(height: 24),
               
@@ -475,9 +505,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
+        );
   }
 
   Widget _buildSubscriptionCard({
@@ -544,9 +572,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   ),
                   if (showTryButton)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
+                        color: const Color(0xFFB3E5FC),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -554,7 +582,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: const Color(0xFF0277BD),
                         ),
                       ),
                     ),
@@ -585,7 +613,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             ],
           ),
           
-          // Бейдж скидки
+          // Бейдж "Выгода 20%" — жёлтый, тёмный текст (как на примере)
           if (showDiscount && discountPercent != null)
             Positioned(
               top: 0,
@@ -593,12 +621,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFFD700),
-                      Color(0xFFFFA500),
-                    ],
-                  ),
+                  color: const Color(0xFFFFD54F),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -606,7 +629,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: const Color(0xFF202020),
                     letterSpacing: 0.5,
                   ),
                 ),
