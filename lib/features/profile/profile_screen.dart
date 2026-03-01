@@ -47,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final email = user['email'] as String? ?? '';
           await AuthStorage.saveUserProfile(name: name, surname: surname);
           if (mounted) {
-            final fallbackName = await AuthStorage.getUserName() ?? (mounted ? AppLocalizations.of(context)!.defaultUserName : 'User');
+            final fallbackName = await AuthStorage.getUserName() ?? 'Пользователь';
             final fallbackEmail = await AuthStorage.getUserEmail() ?? '';
             if (mounted) {
               setState(() {
@@ -75,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         final l10n = AppLocalizations.of(context)!;
         setState(() {
-          _userName = authName ?? prefs.getString('user_name') ?? l10n.defaultUserName;
+          _userName = authName ?? prefs.getString('user_name') ?? 'Пользователь';
           _userSurname = authSurname ?? _userSurname ?? '';
           _userEmail = authEmail ?? prefs.getString('user_email') ?? _userEmail;
           _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
@@ -138,18 +138,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.arrow_back_ios,
                           size: 16,
                           color: Colors.white,
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
                           AppLocalizations.of(context)!.back,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
                             color: Colors.white,
@@ -479,7 +479,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildSettingItem(
                 icon: Icons.language_outlined,
                 title: AppLocalizations.of(context)!.language,
-                value: AppLocalizations.of(context)!.locale.languageCode == 'ru' ? AppLocalizations.of(context)!.languageRussian : AppLocalizations.of(context)!.languageEnglish,
+                value: Localizations.localeOf(context).languageCode == 'ru' ? AppLocalizations.of(context)!.languageRussian : AppLocalizations.of(context)!.languageEnglish,
                 onTap: () {},
               ),
               const Divider(color: Colors.white24, height: 24),
@@ -595,18 +595,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: Colors.red.withOpacity(0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.logout,
                   size: 24,
                   color: Colors.white,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   AppLocalizations.of(context)!.logout,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

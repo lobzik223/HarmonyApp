@@ -47,12 +47,12 @@ class LegalTextScreen extends StatelessWidget {
                                 color: Colors.white.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.arrow_back_ios, size: 16, color: Colors.white),
-                                  SizedBox(width: 4),
-                                  Text(AppLocalizations.of(context)!.back, style: TextStyle(fontSize: 16, color: Colors.white)),
+                                  const Icon(Icons.arrow_back_ios, size: 16, color: Colors.white),
+                                  const SizedBox(width: 4),
+                                  Text(AppLocalizations.of(context)!.back, style: const TextStyle(fontSize: 16, color: Colors.white)),
                                 ],
                               ),
                             ),

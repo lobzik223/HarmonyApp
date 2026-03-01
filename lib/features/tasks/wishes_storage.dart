@@ -14,7 +14,7 @@ class WishesStorage {
       final list = json.decode(jsonStr) as List<dynamic>?;
       if (list == null) return [];
       return list
-          .map((e) {
+          .map<Wish?>((e) {
             if (e is! Map<String, dynamic>) return null;
             return Wish(
               id: e['id'] as String? ?? '',
@@ -25,6 +25,7 @@ class WishesStorage {
               isFavorite: e['isFavorite'] as bool? ?? false,
             );
           })
+          .whereType<Wish>()
           .where((w) => w.id.isNotEmpty && w.title.isNotEmpty)
           .toList();
     } catch (_) {

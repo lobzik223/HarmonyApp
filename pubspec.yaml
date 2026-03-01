@@ -54,7 +54,7 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   
   # Утилиты
-  intl: ^0.19.0
+  intl: ^0.20.2
   
   # SVG поддержка
   flutter_svg: ^2.0.10+1
