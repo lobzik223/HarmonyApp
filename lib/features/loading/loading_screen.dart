@@ -33,12 +33,13 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   }
 
   Future<void> _checkAuthAndPreload() async {
-    // Проверка: есть ли сохранённый аккаунт
+    // Проверка: есть ли сохранённый аккаунт (приложение запоминает вход)
     final token = await AuthStorage.getAccessToken();
     if (token != null && token.isNotEmpty) {
       final user = await AuthApi.me(token);
       if (user != null && mounted) {
-        // Токен валиден — сразу на главный экран
+        await _preloadAssets();
+        if (!mounted) return;
         Navigator.of(context).pushReplacement(noAnimationRoute(const HomeScreen()));
         return;
       }
@@ -46,6 +47,11 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     }
     if (mounted) setState(() => _checkingAuth = false);
     await _preloadAssets();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        noAnimationRoute(const RegistrationScreen()),
+      );
+    }
   }
 
   Future<void> _preloadAssets() async {
@@ -150,38 +156,6 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-          
-          // Кнопка "Далее" сверху (неактивна пока проверяем аккаунт)
-          Positioned(
-            top: 20,
-            right: 20,
-            child: SafeArea(
-              child: ElevatedButton(
-                onPressed: _checkingAuth ? null : () {
-                  Navigator.of(context).pushReplacement(
-                    noAnimationRoute(const RegistrationScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.9),
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  elevation: 2,
-                ),
-                child: Text(
-                  AppLocalizations.of(context)!.nextButton,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
               ),
             ),
           ),

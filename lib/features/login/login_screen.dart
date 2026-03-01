@@ -8,7 +8,7 @@ import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
 import '../registration/registration_screen.dart';
-import '../plan/plan_selection_section.dart';
+import '../loading/loading_screen.dart';
 
 /// Экран входа — проверка через API бекенда
 class LoginScreen extends StatefulWidget {
@@ -61,8 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
           userName: res.userName,
           userSurname: res.userSurname,
         );
-        Navigator.of(context).pushReplacement(
-          noAnimationRoute(const PlanSelectionSection()),
+        Navigator.of(context).pushAndRemoveUntil(
+          noAnimationRoute(const LoadingScreen()),
+          (_) => false,
         );
       } else {
         String err = res.error ?? l10n.errorWrongCredentials;

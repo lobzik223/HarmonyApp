@@ -9,7 +9,7 @@ import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
 import '../login/login_screen.dart';
-import '../plan/plan_selection_section.dart';
+import '../loading/loading_screen.dart';
 import 'verify_email_screen.dart';
 
 /// Экран регистрации — проверка через API бекенда
@@ -88,8 +88,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           userName: res.userName ?? name,
           userSurname: res.userSurname ?? surname,
         );
-        Navigator.of(context).pushReplacement(
-          noAnimationRoute(const PlanSelectionSection()),
+        Navigator.of(context).pushAndRemoveUntil(
+          noAnimationRoute(const LoadingScreen()),
+          (_) => false,
         );
       } else if (res.success && res.codeSent) {
         Navigator.of(context).pushReplacement(

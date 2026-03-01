@@ -6,7 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
-import '../plan/plan_selection_section.dart';
+import '../loading/loading_screen.dart';
 
 /// Экран ввода 6-значного кода подтверждения email (после нажатия «Зарегистрироваться»).
 class VerifyEmailScreen extends StatefulWidget {
@@ -53,7 +53,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           userSurname: res.userSurname,
         );
         Navigator.of(context).pushAndRemoveUntil(
-          noAnimationRoute(const PlanSelectionSection()),
+          noAnimationRoute(const LoadingScreen()),
           (_) => false,
         );
       } else {
