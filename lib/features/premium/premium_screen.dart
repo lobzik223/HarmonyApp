@@ -374,10 +374,10 @@ class _PremiumScreenState extends State<PremiumScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Круг с логотипом Harmony (светло-голубой)
+        // Круг с логотипом Harmony (светло-голубой) — компактный размер
         Container(
-          width: 28,
-          height: 28,
+          width: 20,
+          height: 20,
           decoration: const BoxDecoration(
             color: Color(0xFF5BB8E8),
             shape: BoxShape.circle,
@@ -388,15 +388,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
               child: Image.asset(
                 'assets/icons/harmonyicon.png',
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 16),
+                errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 10),
               ),
             ),
           ),
         ),
-        const SizedBox(width: -4),
-        // Pill с текстом PREMIUM (градиент голубой → бирюзовый)
+        const SizedBox(width: -2),
+        // Pill с текстом PREMIUM — меньше
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
@@ -404,15 +404,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 Color(0xFF46E4E3),
               ],
             ),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             AppLocalizations.of(context)!.premiumBadge,
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
               color: Colors.white,
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -429,10 +429,10 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      margin: const EdgeInsets.symmetric(horizontal: -20),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
