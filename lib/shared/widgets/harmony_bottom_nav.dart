@@ -25,19 +25,21 @@ class HarmonyBottomNav extends StatelessWidget {
   /// Когда true — прозрачное «стеклянное» меню (для открытого полноэкранного плеера), иконка плеера подсвечена.
   final bool glassStyle;
 
+  static const double _barHeight = 62.0;
+  static const double _backgroundOffset = 5.0;
+
   @override
   Widget build(BuildContext context) {
     final double bottomInset = MediaQuery.of(context).padding.bottom;
-    const double backgroundOffset = 8.0;
 
     return SizedBox(
-      height: 80 + bottomInset + backgroundOffset,
+      height: _barHeight + bottomInset + _backgroundOffset,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Positioned.fill(
             child: Transform.translate(
-              offset: Offset(0, backgroundOffset),
+              offset: const Offset(0, _backgroundOffset),
               child: ClipPath(
                 clipper: _HarmonyBottomClipper(
                   activeTab: activeTab,
@@ -82,8 +84,8 @@ class HarmonyBottomNav extends StatelessWidget {
           Positioned.fill(
             child: Padding(
               padding: EdgeInsets.only(
-                top: 6,
-                bottom: bottomInset > 0 ? bottomInset / 2 : 6,
+                top: 4,
+                bottom: bottomInset > 0 ? bottomInset / 2 : 4,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -267,110 +269,113 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
     return _buildDynamicPath(size);
   }
 
+  static const double _refBarHeight = 62.0;
+
   Path _buildHomePath(Size size) {
     final path = Path();
     final width = size.width;
     final height = size.height;
+    final h = _refBarHeight;
 
-    path.moveTo(21.1753 * width / 375, 0.0308974 * height / 80);
+    path.moveTo(21.1753 * width / 375, 0.0308974 * height / h);
     path.cubicTo(
       9.66565 * width / 375,
-      -0.601449 * height / 80,
+      -0.601449 * height / h,
       0,
-      8.55308 * height / 80,
+      8.55308 * height / h,
       0,
-      20.08 * height / 80,
+      20.08 * height / h,
     );
-    path.lineTo(0, 69.8165 * height / 80);
+    path.lineTo(0, 69.8165 * height / h);
     path.cubicTo(
       0,
-      74.2348 * height / 80,
-      3.58172 * height / 80,
-      77.8165 * height / 80,
-      8 * height / 80,
-      77.8165 * height / 80,
+      74.2348 * height / h,
+      3.58172 * height / h,
+      77.8165 * height / h,
+      8 * height / h,
+      77.8165 * height / h,
     );
-    path.lineTo(367 * width / 375, 77.8165 * height / 80);
+    path.lineTo(367 * width / 375, 77.8165 * height / h);
     path.cubicTo(
-      371.418 * height / 80,
-      77.8165 * height / 80,
+      371.418 * height / h,
+      77.8165 * height / h,
       375 * width / 375,
-      74.2348 * height / 80,
+      74.2348 * height / h,
       375 * width / 375,
-      69.8165 * height / 80,
+      69.8165 * height / h,
     );
-    path.lineTo(375 * width / 375, 20.08 * height / 80);
+    path.lineTo(375 * width / 375, 20.08 * height / h);
     path.cubicTo(
       375 * width / 375,
-      8.55308 * height / 80,
+      8.55308 * height / h,
       365.334 * width / 375,
-      -0.601448 * height / 80,
+      -0.601448 * height / h,
       353.825 * width / 375,
-      0.0308983 * height / 80,
+      0.0308983 * height / h,
     );
     path.cubicTo(
       325.867 * width / 375,
-      1.56691 * height / 80,
+      1.56691 * height / h,
       274.72 * width / 375,
-      4.14658 * height / 80,
+      4.14658 * height / h,
       228.096 * width / 375,
-      5.26815 * height / 80,
+      5.26815 * height / h,
     );
     path.cubicTo(
       220.288 * width / 375,
-      5.45598 * height / 80,
+      5.45598 * height / h,
       214.418 * width / 375,
-      19.1347 * height / 80,
+      19.1347 * height / h,
       214.937 * width / 375,
-      26.9279 * height / 80,
+      26.9279 * height / h,
     );
     path.cubicTo(
       214.979 * width / 375,
-      27.5521 * height / 80,
+      27.5521 * height / h,
       215 * width / 375,
-      28.1818 * height / 80,
+      28.1818 * height / h,
       215 * width / 375,
-      28.8165 * height / 80,
+      28.8165 * height / h,
     );
     path.cubicTo(
       215 * width / 375,
-      44.2805 * height / 80,
+      44.2805 * height / h,
       202.464 * width / 375,
-      56.8165 * height / 80,
+      56.8165 * height / h,
       187 * width / 375,
-      56.8165 * height / 80,
+      56.8165 * height / h,
     );
     path.cubicTo(
       171.536 * width / 375,
-      56.8165 * height / 80,
+      56.8165 * height / h,
       159 * width / 375,
-      44.2805 * height / 80,
+      44.2805 * height / h,
       159 * width / 375,
-      28.8165 * height / 80,
+      28.8165 * height / h,
     );
     path.cubicTo(
       159 * width / 375,
-      28.1766 * height / 80,
+      28.1766 * height / h,
       159.021 * width / 375,
-      27.5418 * height / 80,
+      27.5418 * height / h,
       159.064 * width / 375,
-      26.9126 * height / 80,
+      26.9126 * height / h,
     );
     path.cubicTo(
       159.587 * width / 375,
-      19.1192 * height / 80,
+      19.1192 * height / h,
       153.725 * width / 375,
-      5.4352 * height / 80,
+      5.4352 * height / h,
       145.917 * width / 375,
-      5.24419 * height / 80,
+      5.24419 * height / h,
     );
     path.cubicTo(
       99.5592 * width / 375,
-      4.11023 * height / 80,
+      4.11023 * height / h,
       48.9355 * width / 375,
-      1.55607 * height / 80,
+      1.55607 * height / h,
       21.1753 * width / 375,
-      0.0308974 * height / 80,
+      0.0308974 * height / h,
     );
     path.close();
     return path;
@@ -379,8 +384,8 @@ class _HarmonyBottomClipper extends CustomClipper<Path> {
   Path _buildDynamicPath(Size size) {
     final tabs = HarmonyTab.values.length;
     final tabWidth = size.width / tabs;
-    final notchRadius = 27.0;
-    final notchDepth = 26.0;
+    final notchRadius = 20.0;
+    final notchDepth = 18.0;
     final activeIndex = HarmonyTab.values.indexOf(activeTab).clamp(0, tabs - 1);
     final isEdge = activeIndex == 0 || activeIndex == tabs - 1;
     final safeEdge = isEdge ? 8.0 : 18.0;
