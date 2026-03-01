@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 
@@ -24,9 +25,9 @@ class PlanSelectionSection extends StatelessWidget {
               print('Ошибка загрузки фона: $error');
               return Container(
                 color: Colors.grey[300],
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'Фон не загружен',
+                    AppLocalizations.of(context)!.errorBackgroundNotLoaded,
                     style: TextStyle(color: Colors.black),
                   ),
                 ),
@@ -75,15 +76,15 @@ class PlanSelectionSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    _planButton(label: 'Гармония', enabled: true),
+                    _planButton(label: AppLocalizations.of(context)!.planHarmony, enabled: true),
                     const SizedBox(height: 12),
-                    _planButton(label: 'Финансы', enabled: false),
+                    _planButton(label: AppLocalizations.of(context)!.planFinance, enabled: false),
                     const SizedBox(height: 12),
-                    _planButton(label: 'Здоровье', enabled: false),
+                    _planButton(label: AppLocalizations.of(context)!.planHealth, enabled: false),
                     const SizedBox(height: 12),
-                    _planButton(label: 'Сон', enabled: false),
+                    _planButton(label: AppLocalizations.of(context)!.planSleep, enabled: false),
                     const SizedBox(height: 12),
-                    _planButton(label: 'Любовь', enabled: false),
+                    _planButton(label: AppLocalizations.of(context)!.planLove, enabled: false),
                   ],
                 ),
               ),
@@ -106,8 +107,8 @@ class PlanSelectionSection extends StatelessWidget {
                         noAnimationRoute(const HomeScreen()),
                       );
                     },
-                    child: const Text(
-                      'Продолжить',
+                    child: Text(
+                      AppLocalizations.of(context)!.continueButton,
                       style: TextStyle(
                         fontSize: 18, 
                         fontWeight: FontWeight.w700,

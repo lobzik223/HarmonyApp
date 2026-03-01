@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # Основные UI компоненты
   cupertino_icons: ^1.0.8
@@ -84,7 +86,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-  # Использование Material Design
+  generate: true
   uses-material-design: true
 
   # Ассеты приложения
@@ -101,6 +103,8 @@ flutter:
     - assets/icons/pause_button.svg
     - assets/icons/previous_button.svg
     - assets/icons/next_button.svg
+    - assets/icons/google_logo.svg
+    - assets/icons/apple_logo.svg
     - assets/animations/
     - assets/sounds/
     - assets/data/

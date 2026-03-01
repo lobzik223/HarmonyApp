@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../shared/widgets/harmony_bottom_nav.dart';
@@ -7,43 +8,8 @@ import '../meditation/meditation_screen.dart';
 import '../sleep/sleep_screen.dart';
 import '../player/player_screen.dart';
 import 'tasks_screen.dart';
-
-/// Модель желания
-class Wish {
-  final String id;
-  final String category;
-  final String title;
-  final String description;
-  final bool isFulfilled;
-  final bool isFavorite;
-
-  Wish({
-    required this.id,
-    required this.category,
-    required this.title,
-    required this.description,
-    this.isFulfilled = false,
-    this.isFavorite = false,
-  });
-
-  Wish copyWith({
-    String? id,
-    String? category,
-    String? title,
-    String? description,
-    bool? isFulfilled,
-    bool? isFavorite,
-  }) {
-    return Wish(
-      id: id ?? this.id,
-      category: category ?? this.category,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      isFulfilled: isFulfilled ?? this.isFulfilled,
-      isFavorite: isFavorite ?? this.isFavorite,
-    );
-  }
-}
+import 'wish_model.dart';
+import 'wishes_storage.dart';
 
 /// Экран "Желания"
 /// Фон: assets/images/fon1.jpg
@@ -56,43 +22,23 @@ class WishesScreen extends StatefulWidget {
 
 class _WishesScreenState extends State<WishesScreen> {
   int _selectedSegment = 0; // 0 = Текущие, 1 = Исполненные
-  
-  // Список желаний
-  List<Wish> _wishes = [
-    Wish(
-      id: '1',
-      category: 'Название категории',
-      title: 'Заголовк желания, который может уйти на 2',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
-      isFulfilled: false,
-      isFavorite: false,
-    ),
-    Wish(
-      id: '2',
-      category: 'Название категории',
-      title: 'Заголовк желания',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
-      isFulfilled: false,
-      isFavorite: true,
-    ),
-    Wish(
-      id: '3',
-      category: 'Название категории',
-      title: 'Заголовк желания, который может уйти на 2',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
-      isFulfilled: false,
-      isFavorite: false,
-    ),
-    Wish(
-      id: '4',
-      category: 'Название категории',
-      title: 'Заголовк желания',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
-      isFulfilled: true,
-      isFavorite: false,
-    ),
-  ];
-  
+  List<Wish> _wishes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWishes();
+  }
+
+  Future<void> _loadWishes() async {
+    final list = await WishesStorage.getWishes();
+    if (mounted) setState(() => _wishes = list);
+  }
+
+  Future<void> _saveWishes() async {
+    await WishesStorage.saveWishes(_wishes);
+  }
+
   // Получаем отфильтрованные желания
   List<Wish> get _filteredWishes {
     if (_selectedSegment == 0) {
@@ -102,30 +48,29 @@ class _WishesScreenState extends State<WishesScreen> {
     }
   }
   
-  // Добавить новое желание
   void _addWish() {
     showDialog(
       context: context,
       builder: (context) => _AddWishDialog(
-        onAdd: (wish) {
-          setState(() {
-            _wishes.add(wish);
-          });
+        onAdd: (wish) async {
+          setState(() => _wishes.add(wish));
+          await _saveWishes();
         },
       ),
     );
   }
-  
-  // Переключить избранное
-  void _toggleFavorite(String id) {
+
+  /// Нажатие на сердечко: перемещает желание из «Текущие» в «Исполненные».
+  void _toggleFulfilled(String id) {
     setState(() {
       final index = _wishes.indexWhere((wish) => wish.id == id);
       if (index != -1) {
         _wishes[index] = _wishes[index].copyWith(
-          isFavorite: !_wishes[index].isFavorite,
+          isFulfilled: !_wishes[index].isFulfilled,
         );
       }
     });
+    _saveWishes();
   }
 
   void _handleBottomNavTap(HarmonyTab tab) {
@@ -189,15 +134,15 @@ class _WishesScreenState extends State<WishesScreen> {
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.arrow_back_ios,
                         size: 16,
                         color: Colors.white,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Назад',
+                        AppLocalizations.of(context)!.back,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
@@ -212,7 +157,7 @@ class _WishesScreenState extends State<WishesScreen> {
                 Expanded(
                   child: Center(
                     child: Text(
-                      'ЖЕЛАНИЯ',
+                      AppLocalizations.of(context)!.wishesTitle,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w400,
@@ -245,13 +190,14 @@ class _WishesScreenState extends State<WishesScreen> {
             child: _buildWishesList(),
           ),
 
-          // Кнопка добавления нового желания
-          Positioned(
-            bottom: 120,
-            right: 20,
-            child: GestureDetector(
-              onTap: _addWish,
-              child: Container(
+          // Кнопка добавления — только во вкладке «Текущие»
+          if (_selectedSegment == 0)
+            Positioned(
+              bottom: 120,
+              right: 20,
+              child: GestureDetector(
+                onTap: _addWish,
+                child: Container(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
@@ -276,9 +222,8 @@ class _WishesScreenState extends State<WishesScreen> {
                 ),
               ),
             ),
-          ),
 
-          // Нижнее меню поверх изображения
+          // Нижнее меню
           Positioned(
             bottom: 0,
             left: 0,
@@ -337,7 +282,7 @@ class _WishesScreenState extends State<WishesScreen> {
                           height: 48,
                           alignment: Alignment.center,
                           child: Text(
-                            'Текущие',
+                            AppLocalizations.of(context)!.currentWishes,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -360,7 +305,7 @@ class _WishesScreenState extends State<WishesScreen> {
                           height: 48,
                           alignment: Alignment.center,
                           child: Text(
-                            'Исполненные',
+                            AppLocalizations.of(context)!.fulfilledWishes,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -388,7 +333,7 @@ class _WishesScreenState extends State<WishesScreen> {
     if (filteredWishes.isEmpty) {
       return Center(
         child: Text(
-          _selectedSegment == 0 ? 'Нет текущих желаний' : 'Нет исполненных желаний',
+          _selectedSegment == 0 ? AppLocalizations.of(context)!.noCurrentWishes : AppLocalizations.of(context)!.noFulfilledWishes,
           style: const TextStyle(
             fontSize: 16,
             color: Colors.white70,
@@ -441,13 +386,13 @@ class _WishesScreenState extends State<WishesScreen> {
                       height: 1.0,
                     ),
                   ),
-                  // Иконка сердца
+                  // Сердечко: нажатие переносит между «Текущие» и «Исполненные»; в «Исполненных» крестик не показываем
                   GestureDetector(
-                    onTap: () => _toggleFavorite(wish.id),
+                    onTap: () => _toggleFulfilled(wish.id),
                     child: Icon(
-                      wish.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      wish.isFulfilled ? Icons.favorite : Icons.favorite_border,
                       size: 20,
-                      color: wish.isFavorite ? Colors.red : Colors.white70,
+                      color: wish.isFulfilled ? Colors.red : Colors.white70,
                     ),
                   ),
                 ],
@@ -497,7 +442,7 @@ class _AddWishDialog extends StatefulWidget {
 }
 
 class _AddWishDialogState extends State<_AddWishDialog> {
-  final _categoryController = TextEditingController(text: 'Название категории');
+  final _categoryController = TextEditingController();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
 
@@ -512,7 +457,7 @@ class _AddWishDialogState extends State<_AddWishDialog> {
   void _saveWish() {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Введите заголовок желания')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.snackbarEnterWishTitle)),
       );
       return;
     }
@@ -520,12 +465,10 @@ class _AddWishDialogState extends State<_AddWishDialog> {
     final wish = Wish(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       category: _categoryController.text.trim().isEmpty 
-          ? 'Название категории' 
+          ? AppLocalizations.of(context)!.categoryNamePlaceholder 
           : _categoryController.text.trim(),
       title: _titleController.text.trim(),
-      description: _descriptionController.text.trim().isEmpty
-          ? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.'
-          : _descriptionController.text.trim(),
+      description: _descriptionController.text.trim(),
     );
 
     widget.onAdd(wish);
@@ -550,9 +493,9 @@ class _AddWishDialogState extends State<_AddWishDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Новое желание',
-                  style: TextStyle(
+                Text(
+                  AppLocalizations.of(context)!.newWishTitle,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -563,7 +506,7 @@ class _AddWishDialogState extends State<_AddWishDialog> {
                   controller: _categoryController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Категория',
+                    labelText: AppLocalizations.of(context)!.categoryLabel,
                     labelStyle: const TextStyle(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.white54),
@@ -580,7 +523,7 @@ class _AddWishDialogState extends State<_AddWishDialog> {
                   controller: _titleController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Заголовок',
+                    labelText: AppLocalizations.of(context)!.titleLabel,
                     labelStyle: const TextStyle(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.white54),
@@ -598,7 +541,7 @@ class _AddWishDialogState extends State<_AddWishDialog> {
                   style: const TextStyle(color: Colors.white),
                   maxLines: 3,
                   decoration: InputDecoration(
-                    labelText: 'Описание (необязательно)',
+                    labelText: AppLocalizations.of(context)!.descriptionOptional,
                     labelStyle: const TextStyle(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.white54),
@@ -616,9 +559,9 @@ class _AddWishDialogState extends State<_AddWishDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text(
-                        'Отмена',
-                        style: TextStyle(color: Colors.white70),
+                      child: Text(
+                        AppLocalizations.of(context)!.cancel,
+                        style: const TextStyle(color: Colors.white70),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -628,7 +571,7 @@ class _AddWishDialogState extends State<_AddWishDialog> {
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black87,
                       ),
-                      child: const Text('Добавить'),
+                      child: Text(AppLocalizations.of(context)!.add),
                     ),
                   ],
                 ),

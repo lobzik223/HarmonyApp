@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
 import '../../core/storage/recent_tracks_storage.dart';
@@ -131,7 +132,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             right: 0,
             child: Center(
               child: Text(
-                'Прослушанные',
+                AppLocalizations.of(context)!.listenedTitle,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w400,
@@ -164,7 +165,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     }),
                     const SizedBox(height: 24),
                     Text(
-                      'Все треки',
+                      AppLocalizations.of(context)!.allTracks,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
@@ -170,7 +171,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                   // Заголовок "МЕДИТАЦИИ"
                   Center(
                     child: Text(
-                      'МЕДИТАЦИИ',
+                      AppLocalizations.of(context)!.meditationsTitle,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 20,
@@ -192,7 +193,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'ДЛЯ ОТДЫХА',
+                          AppLocalizations.of(context)!.forRelaxation,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -206,7 +207,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Все',
+                              AppLocalizations.of(context)!.all,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
@@ -266,7 +267,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'ДЛЯ ВДОХНОВЕНИЯ',
+                          AppLocalizations.of(context)!.forInspiration,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -280,7 +281,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Все',
+                              AppLocalizations.of(context)!.all,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
@@ -340,7 +341,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'ДЛЯ ПОИСКА ЛЮБВИ',
+                          AppLocalizations.of(context)!.forFindingLove,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -354,7 +355,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Все',
+                              AppLocalizations.of(context)!.all,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
@@ -605,7 +606,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'PREMIUM',
+                            AppLocalizations.of(context)!.premiumBadge,
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,

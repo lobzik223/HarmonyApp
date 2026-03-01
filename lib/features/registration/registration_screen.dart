@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui' as ui;
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
 import '../login/login_screen.dart';
 import '../plan/plan_selection_section.dart';
+import 'verify_email_screen.dart';
 
 /// Экран регистрации — проверка через API бекенда
 class RegistrationScreen extends StatefulWidget {
@@ -44,6 +47,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   void _doRegister() {
+    final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final surname = _surnameController.text.trim();
     final email = _emailController.text.trim();
@@ -51,14 +55,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
     setState(() {
       _errorText = null;
-      if (name.isEmpty) _errorText = 'Введите имя';
-      else if (name.length > 50) _errorText = 'Имя не длиннее 50 символов';
-      else if (surname.isEmpty) _errorText = 'Введите фамилию';
-      else if (surname.length > 50) _errorText = 'Фамилия не длиннее 50 символов';
-      else if (email.isEmpty) _errorText = 'Введите почту';
-      else if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) _errorText = 'Введите корректный email';
-      else if (password.isEmpty) _errorText = 'Введите пароль';
-      else if (password.length > 128) _errorText = 'Пароль не длиннее 128 символов';
+      if (name.isEmpty) _errorText = l10n.errorEnterName;
+      else if (name.length > 50) _errorText = l10n.errorNameTooLong;
+      else if (surname.isEmpty) _errorText = l10n.errorEnterSurname;
+      else if (surname.length > 50) _errorText = l10n.errorSurnameTooLong;
+      else if (email.isEmpty) _errorText = l10n.errorEnterEmail;
+      else if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) _errorText = l10n.errorInvalidEmail;
+      else if (password.isEmpty) _errorText = l10n.errorEnterPassword;
+      else if (password.length > 128) _errorText = l10n.errorPasswordTooLong;
       if (_errorText != null) return;
       _loading = true;
     });
@@ -87,10 +91,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         Navigator.of(context).pushReplacement(
           noAnimationRoute(const PlanSelectionSection()),
         );
+      } else if (res.success && res.codeSent) {
+        Navigator.of(context).pushReplacement(
+          noAnimationRoute(VerifyEmailScreen(email: email)),
+        );
       } else {
-        String err = res.error ?? 'Ошибка регистрации';
-        if (err.toLowerCase().contains('8') && err.toLowerCase().contains('символ')) {
-          err = 'Сервер отклонил пароль как короткий. Отправленная длина: ${password.length}.';
+        final l10n = AppLocalizations.of(context)!;
+        String err = res.error ?? l10n.errorRegistration;
+        if (err.toLowerCase().contains('8') && (err.toLowerCase().contains('символ') || err.toLowerCase().contains('character'))) {
+          err = l10n.errorServerPasswordShort(password.length);
         }
         setState(() {
           _errorText = err;
@@ -100,7 +109,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorText = 'Не удалось подключиться. Проверьте интернет.';
+          _errorText = AppLocalizations.of(context)!.errorConnection;
           _loading = false;
         });
       }
@@ -145,7 +154,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'РЕГИСТРАЦИЯ',
+                    AppLocalizations.of(context)!.registrationTitle,
                     style: GoogleFonts.inter(
                       fontSize: 20, fontWeight: FontWeight.w400,
                       color: Colors.white, decoration: TextDecoration.none,
@@ -156,13 +165,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       children: [
-                        _buildTextField('Имя', _nameController),
+                        _buildTextField(AppLocalizations.of(context)!.nameHint, _nameController),
                         const SizedBox(height: 16),
-                        _buildTextField('Фамилия', _surnameController),
+                        _buildTextField(AppLocalizations.of(context)!.surnameHint, _surnameController),
                         const SizedBox(height: 16),
-                        _buildTextField('Почта', _emailController),
+                        _buildTextField(AppLocalizations.of(context)!.emailHint, _emailController),
                         const SizedBox(height: 16),
-                        _buildTextField('Пароль', _passwordController, obscure: true),
+                        _buildTextField(AppLocalizations.of(context)!.passwordHint, _passwordController, obscure: true),
                         if (_errorText != null) ...[
                           const SizedBox(height: 12),
                           Text(
@@ -189,7 +198,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : Text(
-                                    'Зарегистрироваться',
+                                    AppLocalizations.of(context)!.registerButton,
                                     style: GoogleFonts.inter(
                                       fontSize: 16, fontWeight: FontWeight.w600,
                                       color: const Color(0xFF202020),
@@ -200,7 +209,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Уже есть аккаунт?',
+                          AppLocalizations.of(context)!.alreadyHaveAccount,
                           style: GoogleFonts.inter(
                             fontSize: 14, fontWeight: FontWeight.w400,
                             color: Colors.white, decoration: TextDecoration.none,
@@ -216,7 +225,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Войти',
+                                AppLocalizations.of(context)!.loginLink,
                                 style: GoogleFonts.inter(
                                   fontSize: 14, fontWeight: FontWeight.w600,
                                   color: Colors.white, decoration: TextDecoration.none,
@@ -229,7 +238,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         ),
                         const SizedBox(height: 48),
                         Text(
-                          'Или войдите с помощью:',
+                          AppLocalizations.of(context)!.orLoginWith,
                           style: GoogleFonts.inter(
                             fontSize: 14, fontWeight: FontWeight.w400,
                             color: Colors.white, decoration: TextDecoration.none,
@@ -239,11 +248,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildSocialIcon(Icons.g_mobiledata, Colors.white, const Color(0xFF4285F4)),
+                            _buildGoogleIcon(),
                             const SizedBox(width: 16),
-                            _buildSocialIcon(Icons.circle, const Color(0xFF0077FF), Colors.white),
-                            const SizedBox(width: 16),
-                            _buildSocialIcon(Icons.circle, const Color(0xFFFC3F1D), Colors.white),
+                            _buildAppleIcon(),
                           ],
                         ),
                         const SizedBox(height: 40),
@@ -288,14 +295,50 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-  Widget _buildSocialIcon(IconData icon, Color iconColor, Color bgColor) {
+  static const double _socialButtonSize = 56;
+  static const double _socialIconSize = 28;
+
+  Widget _buildGoogleIcon() {
     return GestureDetector(
       onTap: () {},
       child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-        child: Center(child: Icon(icon, color: iconColor, size: 24)),
+        width: _socialButtonSize,
+        height: _socialButtonSize,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: SvgPicture.asset(
+            'assets/icons/google_logo.svg',
+            width: _socialIconSize,
+            height: _socialIconSize,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppleIcon() {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: _socialButtonSize,
+        height: _socialButtonSize,
+        decoration: const BoxDecoration(
+          color: Color(0xFF000000),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: SvgPicture.asset(
+            'assets/icons/apple_logo.svg',
+            width: _socialIconSize,
+            height: _socialIconSize,
+            fit: BoxFit.contain,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
       ),
     );
   }

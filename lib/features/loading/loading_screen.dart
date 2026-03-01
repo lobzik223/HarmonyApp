@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/auth/auth_storage.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../registration/registration_screen.dart';
 import 'dart:ui' as ui;
@@ -124,7 +125,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                   
                   // Текст "HARMONY" с шрифтом Unbounded - предзагружен
                   Text(
-                    'HARMONY',
+                    AppLocalizations.of(context)!.appBrandName,
                     style: GoogleFonts.unbounded(
                       fontSize: 36,
                       fontWeight: FontWeight.w500, // Medium (500)
@@ -138,7 +139,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                   
                   // Текст "ОСОЗНАЙ ЭТОТ МОМЕНТ" с шрифтом Inter - предзагружен
                   Text(
-                    'ОСОЗНАЙ ЭТОТ МОМЕНТ',
+                    AppLocalizations.of(context)!.loadingTagline,
                     style: GoogleFonts.inter(
                       fontSize: 17,
                       fontWeight: FontWeight.w400, // Regular
@@ -173,8 +174,8 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                   ),
                   elevation: 2,
                 ),
-                child: const Text(
-                  'Далее',
+                child: Text(
+                  AppLocalizations.of(context)!.nextButton,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../premium/premium_screen.dart';
 import '../loading/loading_screen.dart';
@@ -22,9 +23,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String _userName = 'Пользователь';
+  String _userName = '';
   String _userSurname = '';
-  String _userEmail = 'user@example.com';
+  String _userEmail = '';
   bool _notificationsEnabled = true;
   String? _profilePhotoPath;
 
@@ -46,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final email = user['email'] as String? ?? '';
           await AuthStorage.saveUserProfile(name: name, surname: surname);
           if (mounted) {
-            final fallbackName = await AuthStorage.getUserName() ?? 'Пользователь';
+            final fallbackName = await AuthStorage.getUserName() ?? (mounted ? AppLocalizations.of(context)!.defaultUserName : 'User');
             final fallbackEmail = await AuthStorage.getUserEmail() ?? '';
             if (mounted) {
               setState(() {
@@ -72,8 +73,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           authSurname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
           await AuthStorage.saveUserProfile(name: authName, surname: authSurname);
         }
+        final l10n = AppLocalizations.of(context)!;
         setState(() {
-          _userName = authName ?? prefs.getString('user_name') ?? _userName;
+          _userName = authName ?? prefs.getString('user_name') ?? l10n.defaultUserName;
           _userSurname = authSurname ?? _userSurname ?? '';
           _userEmail = authEmail ?? prefs.getString('user_email') ?? _userEmail;
           _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
@@ -146,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          'Назад',
+                          AppLocalizations.of(context)!.back,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
@@ -168,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             right: 0,
             child: Center(
               child: Text(
-                'ПРОФИЛЬ',
+                AppLocalizations.of(context)!.profileTitle,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w400,
@@ -198,25 +200,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
                   
                   // Раздел "Данные профиля"
-                  _buildSectionTitle('Данные профиля'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.profileDataSection),
                   const SizedBox(height: 12),
                   _buildProfileDataCard(),
                   const SizedBox(height: 20),
-                  
-                  // Политика конфиденциальности и Пользовательское соглашение
-                  _buildSectionTitle('Документы'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.documentsSection),
                   const SizedBox(height: 12),
                   _buildLegalCard(),
                   const SizedBox(height: 20),
-                  
-                  // Раздел "Уведомления"
-                  _buildSectionTitle('Уведомления'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.notificationsSection),
                   const SizedBox(height: 12),
                   _buildNotificationsCard(),
                   const SizedBox(height: 20),
-                  
-                  // Раздел "Настройки"
-                  _buildSectionTitle('Настройки'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.settingsSection),
                   const SizedBox(height: 12),
                   _buildSettingsCard(),
                   const SizedBox(height: 20),
@@ -359,14 +355,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildSettingItem(
                 icon: Icons.person_outline,
-                title: 'Имя',
+                title: AppLocalizations.of(context)!.nameLabel,
                 value: _userSurname.isEmpty ? _userName : '$_userName $_userSurname'.trim(),
                 onTap: () => _showEditNameDialog(),
               ),
               const Divider(color: Colors.white24, height: 24),
               _buildSettingItem(
                 icon: Icons.email_outlined,
-                title: 'Почта',
+                title: AppLocalizations.of(context)!.emailLabel,
                 value: _userEmail,
                 onTap: null,
               ),
@@ -393,13 +389,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildSettingItem(
                 icon: Icons.privacy_tip_outlined,
-                title: 'Политика конфиденциальности',
+                title: AppLocalizations.of(context)!.privacyPolicy,
                 value: '',
                 onTap: () {
+                  final l10n = AppLocalizations.of(context)!;
                   Navigator.of(context).push(
-                    noAnimationRoute(const LegalTextScreen(
-                      title: 'Политика конфиденциальности',
-                      body: 'Здесь будет текст политики конфиденциальности.',
+                    noAnimationRoute(LegalTextScreen(
+                      title: l10n.privacyPolicy,
+                      body: l10n.privacyPolicyPlaceholder,
                     )),
                   );
                 },
@@ -407,13 +404,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Divider(color: Colors.white24, height: 24),
               _buildSettingItem(
                 icon: Icons.description_outlined,
-                title: 'Пользовательское соглашение',
+                title: AppLocalizations.of(context)!.termsOfUse,
                 value: '',
                 onTap: () {
+                  final l10n = AppLocalizations.of(context)!;
                   Navigator.of(context).push(
-                    noAnimationRoute(const LegalTextScreen(
-                      title: 'Пользовательское соглашение',
-                      body: 'Здесь будет текст пользовательского соглашения.',
+                    noAnimationRoute(LegalTextScreen(
+                      title: l10n.termsOfUse,
+                      body: l10n.termsOfUsePlaceholder,
                     )),
                   );
                 },
@@ -439,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: _buildSwitchItem(
             icon: Icons.notifications_outlined,
-            title: 'Уведомления',
+            title: AppLocalizations.of(context)!.notifications,
             value: _notificationsEnabled,
             onChanged: (value) {
               setState(() {
@@ -469,7 +467,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildSettingItem(
                 icon: Icons.star_outline,
-                title: 'Premium',
+                title: AppLocalizations.of(context)!.premium,
                 value: '',
                 onTap: () {
                   Navigator.of(context).push(
@@ -480,22 +478,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Divider(color: Colors.white24, height: 24),
               _buildSettingItem(
                 icon: Icons.language_outlined,
-                title: 'Язык',
-                value: 'Русский',
+                title: AppLocalizations.of(context)!.language,
+                value: AppLocalizations.of(context)!.locale.languageCode == 'ru' ? AppLocalizations.of(context)!.languageRussian : AppLocalizations.of(context)!.languageEnglish,
                 onTap: () {},
               ),
               const Divider(color: Colors.white24, height: 24),
               _buildSettingItem(
                 icon: Icons.help_outline,
-                title: 'Помощь и поддержка',
+                title: AppLocalizations.of(context)!.helpAndSupport,
                 value: '',
                 onTap: () {},
               ),
               const Divider(color: Colors.white24, height: 24),
               _buildSettingItem(
                 icon: Icons.info_outline,
-                title: 'О приложении',
-                value: 'Версия 1.0.0',
+                title: AppLocalizations.of(context)!.aboutApp,
+                value: AppLocalizations.of(context)!.versionFormat,
                 onTap: () {},
               ),
             ],
@@ -607,7 +605,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Выйти',
+                  AppLocalizations.of(context)!.logout,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -636,7 +634,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Не удалось сохранить фото: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorSavePhoto(e.toString()))),
         );
       }
     }
@@ -645,10 +643,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showEditNameDialog() {
     final displayName = _userSurname.isEmpty ? _userName : '$_userName $_userSurname'.trim();
     final controller = TextEditingController(text: displayName);
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => _EditDialog(
-        title: 'Изменить имя',
+        title: l10n.editNameTitle,
         controller: controller,
         onSave: (value) async {
           final name = value.trim();
@@ -656,7 +655,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final token = await AuthStorage.getAccessToken();
           if (token == null || token.isEmpty) {
             if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Нужно войти в аккаунт')),
+              SnackBar(content: Text(AppLocalizations.of(context)!.snackbarNeedLogin)),
             );
             return;
           }
@@ -675,7 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Navigator.of(context).pop();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(result.error ?? 'Ошибка сохранения')),
+              SnackBar(content: Text(result.error ?? AppLocalizations.of(context)!.errorSaveProfile)),
             );
           }
         },
@@ -690,7 +689,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Выйти из аккаунта?',
+          AppLocalizations.of(context)!.logoutDialogTitle,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -698,7 +697,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         content: Text(
-          'Вы уверены, что хотите выйти?',
+          AppLocalizations.of(context)!.logoutDialogMessage,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w400,
@@ -709,7 +708,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Отмена',
+              AppLocalizations.of(context)!.cancel,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -729,7 +728,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
             child: Text(
-              'Выйти',
+              AppLocalizations.of(context)!.logout,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -806,7 +805,7 @@ class _EditDialogState extends State<_EditDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Отмена', style: TextStyle(color: Colors.white70)),
+                      child: Text(AppLocalizations.of(context)!.cancel, style: const TextStyle(color: Colors.white70)),
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
@@ -817,7 +816,7 @@ class _EditDialogState extends State<_EditDialog> {
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black87,
                       ),
-                      child: const Text('Сохранить'),
+                      child: Text(AppLocalizations.of(context)!.save),
                     ),
                   ],
                 ),

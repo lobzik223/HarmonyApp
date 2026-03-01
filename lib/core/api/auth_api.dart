@@ -77,6 +77,24 @@ class AuthApi {
     return _parseAuthResponse(res);
   }
 
+  /// POST /api/auth/verify-email — подтверждение кода и завершение регистрации
+  static Future<AuthResponse> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
+    final res = await http
+        .post(
+          Uri.parse('$_base$_authPrefix/verify-email'),
+          headers: _baseHeaders,
+          body: jsonEncode({
+            'email': email.trim().toLowerCase(),
+            'code': code.trim(),
+          }),
+        )
+        .timeout(AppConstants.apiTimeout);
+    return _parseAuthResponse(res);
+  }
+
   /// GET /api/auth/me — проверка токена (Authorization: Bearer)
   static Future<Map<String, dynamic>?> me(String accessToken) async {
     final headers = {..._baseHeaders, 'Authorization': 'Bearer $accessToken'};
@@ -125,6 +143,10 @@ class AuthApi {
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final map = body is Map ? body as Map<String, dynamic> : null;
       if (map == null) return AuthResponse(success: false, error: 'Неверный ответ сервера');
+      // Регистрация: сначала приходит sent: true без токенов
+      if (map['sent'] == true) {
+        return AuthResponse(success: true, codeSent: true);
+      }
       final user = map['user'] as Map<String, dynamic>?;
       return AuthResponse(
         success: true,
@@ -152,6 +174,7 @@ class AuthResponse {
   final String? userEmail;
   final String? userName;
   final String? userSurname;
+  final bool codeSent;
   final String? error;
 
   AuthResponse({
@@ -161,6 +184,7 @@ class AuthResponse {
     this.userEmail,
     this.userName,
     this.userSurname,
+    this.codeSent = false,
     this.error,
   });
 }

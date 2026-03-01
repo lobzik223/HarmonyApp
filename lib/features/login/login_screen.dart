@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui' as ui;
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/auth_api.dart';
@@ -34,15 +36,16 @@ class _LoginScreenState extends State<LoginScreen> {
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
 
+    final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     setState(() {
       _errorText = null;
-      if (email.isEmpty) _errorText = 'Введите почту';
-      else if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) _errorText = 'Введите корректный email';
-      else if (password.isEmpty) _errorText = 'Введите пароль';
-      else if (password.length > 128) _errorText = 'Пароль не длиннее 128 символов';
+      if (email.isEmpty) _errorText = l10n.errorEnterEmail;
+      else if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) _errorText = l10n.errorInvalidEmail;
+      else if (password.isEmpty) _errorText = l10n.errorEnterPassword;
+      else if (password.length > 128) _errorText = l10n.errorPasswordTooLong;
       if (_errorText != null) return;
       _loading = true;
     });
@@ -62,9 +65,9 @@ class _LoginScreenState extends State<LoginScreen> {
           noAnimationRoute(const PlanSelectionSection()),
         );
       } else {
-        String err = res.error ?? 'Неверная почта или пароль';
-        if (err.toLowerCase().contains('8') && err.toLowerCase().contains('символ')) {
-          err = 'Бэкенд отклонил пароль как короткий. Отправленная длина: ${password.length}.';
+        String err = res.error ?? l10n.errorWrongCredentials;
+        if (err.toLowerCase().contains('8') && (err.toLowerCase().contains('символ') || err.toLowerCase().contains('character'))) {
+          err = l10n.errorBackendPasswordShort(password.length);
         }
         setState(() {
           _errorText = err;
@@ -74,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorText = 'Не удалось подключиться. Проверьте интернет.';
+          _errorText = AppLocalizations.of(context)!.errorConnection;
           _loading = false;
         });
       }
@@ -119,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'ВХОД',
+                    AppLocalizations.of(context)!.loginTitle,
                     style: GoogleFonts.inter(
                       fontSize: 20, fontWeight: FontWeight.w400,
                       color: Colors.white, decoration: TextDecoration.none,
@@ -130,9 +133,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       children: [
-                        _buildTextField('Телефон или почта', _emailController),
+                        _buildTextField(AppLocalizations.of(context)!.phoneOrEmailHint, _emailController),
                         const SizedBox(height: 16),
-                        _buildTextField('Пароль', _passwordController, obscure: true),
+                        _buildTextField(AppLocalizations.of(context)!.passwordHint, _passwordController, obscure: true),
                         if (_errorText != null) ...[
                           const SizedBox(height: 12),
                           Text(
@@ -159,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : Text(
-                                    'Войти',
+                                    AppLocalizations.of(context)!.loginButton,
                                     style: GoogleFonts.inter(
                                       fontSize: 16, fontWeight: FontWeight.w600,
                                       color: const Color(0xFF202020),
@@ -170,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Нет аккаунта?',
+                          AppLocalizations.of(context)!.noAccount,
                           style: GoogleFonts.inter(
                             fontSize: 14, fontWeight: FontWeight.w400,
                             color: Colors.white, decoration: TextDecoration.none,
@@ -186,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Зарегистрироваться',
+                                AppLocalizations.of(context)!.registerLink,
                                 style: GoogleFonts.inter(
                                   fontSize: 14, fontWeight: FontWeight.w600,
                                   color: Colors.white, decoration: TextDecoration.none,
@@ -199,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 48),
                         Text(
-                          'Или войдите с помощью:',
+                          AppLocalizations.of(context)!.orLoginWith,
                           style: GoogleFonts.inter(
                             fontSize: 14, fontWeight: FontWeight.w400,
                             color: Colors.white, decoration: TextDecoration.none,
@@ -209,11 +212,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildSocialIcon(Icons.g_mobiledata, Colors.white, const Color(0xFF4285F4)),
+                            _buildGoogleIcon(),
                             const SizedBox(width: 16),
-                            _buildSocialIcon(Icons.circle, const Color(0xFF0077FF), Colors.white),
-                            const SizedBox(width: 16),
-                            _buildSocialIcon(Icons.circle, const Color(0xFFFC3F1D), Colors.white),
+                            _buildAppleIcon(),
                           ],
                         ),
                         const SizedBox(height: 40),
@@ -258,14 +259,50 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSocialIcon(IconData icon, Color iconColor, Color bgColor) {
+  static const double _socialButtonSize = 56;
+  static const double _socialIconSize = 28;
+
+  Widget _buildGoogleIcon() {
     return GestureDetector(
       onTap: () {},
       child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-        child: Center(child: Icon(icon, color: iconColor, size: 24)),
+        width: _socialButtonSize,
+        height: _socialButtonSize,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: SvgPicture.asset(
+            'assets/icons/google_logo.svg',
+            width: _socialIconSize,
+            height: _socialIconSize,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppleIcon() {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: _socialButtonSize,
+        height: _socialButtonSize,
+        decoration: const BoxDecoration(
+          color: Color(0xFF000000),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: SvgPicture.asset(
+            'assets/icons/apple_logo.svg',
+            width: _socialIconSize,
+            height: _socialIconSize,
+            fit: BoxFit.contain,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
       ),
     );
   }

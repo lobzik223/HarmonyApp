@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
 
 /// Экран Premium подписки
@@ -49,8 +50,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       color: Colors.white.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
-                      'Назад',
+                    child: Text(
+                      AppLocalizations.of(context)!.back,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
@@ -91,7 +92,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         ),
                         SizedBox(width: 6),
                         Text(
-                          'О приложении',
+                          AppLocalizations.of(context)!.aboutApp,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
@@ -127,7 +128,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   
                   // Заголовок "ПОДАРИТЕ ПРЕМИУМ СЕРТИФИКАТ"
                   Text(
-                    'ПОДАРИТЕ ПРЕМИУМ СЕРТИФИКАТ',
+                    AppLocalizations.of(context)!.giftPremiumCertTitle,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 20,
@@ -143,7 +144,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   
                   // Подзаголовок "HARMONY PREMIUM НА 30 ДНЕЙ"
                   Text(
-                    'HARMONY PREMIUM НА 30 ДНЕЙ',
+                    AppLocalizations.of(context)!.harmonyPremium30Days,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 18,
@@ -159,7 +160,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   
                   // Описание
                   Text(
-                    'Близкому или родному человеку',
+                    AppLocalizations.of(context)!.forLovedOne,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 16,
@@ -174,7 +175,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   const SizedBox(height: 24),
                   
                   // Кнопка "Купить за 249 р."
-                  _buildBuyButton('Купить за 249 р.'),
+                  _buildBuyButton(AppLocalizations.of(context)!.buyFor249),
                   
                   const SizedBox(height: 40),
                   
@@ -390,7 +391,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'ПОЧУВСТВУЙ ПОЛНУЮ\nГАРМОНИЮ С',
+                      AppLocalizations.of(context)!.feelFullHarmonyWith,
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -425,7 +426,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'PREMIUM',
+                          AppLocalizations.of(context)!.premiumBadge,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -443,7 +444,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
               
               // Описание
               Text(
-                'подпишись ВСЕГО ОТ 199Р ЗА МЕС.',
+                AppLocalizations.of(context)!.subscribeFrom199,
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
@@ -454,10 +455,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
               
               const SizedBox(height: 24),
               
-              // Карточка подписки "МЕСЯЦ"
               _buildSubscriptionCard(
-                title: 'МЕСЯЦ',
-                price: '265 р. / мес',
+                title: AppLocalizations.of(context)!.monthPlan,
+                price: AppLocalizations.of(context)!.price265PerMonth,
                 showTryButton: true,
                 onTry: () {},
                 onBuy: () {},
@@ -465,11 +465,10 @@ class _PremiumScreenState extends State<PremiumScreen> {
               
               const SizedBox(height: 16),
               
-              // Карточка подписки "ГОД"
               _buildSubscriptionCard(
-                title: 'ГОД',
-                price: '199р. / мес',
-                priceYear: '2390р. / год',
+                title: AppLocalizations.of(context)!.yearPlan,
+                price: AppLocalizations.of(context)!.price199PerMonth,
+                priceYear: AppLocalizations.of(context)!.price2390PerYear,
                 showDiscount: true,
                 discountPercent: 20,
                 onBuy: () {},
@@ -551,7 +550,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'ПОПРОБУЙТЕ',
+                        AppLocalizations.of(context)!.tryButton,
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -573,7 +572,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      'Купить',
+                      AppLocalizations.of(context)!.buy,
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -603,7 +602,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'ВЫГОДА $discountPercent%',
+                  AppLocalizations.of(context)!.discountPercent(discountPercent!),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

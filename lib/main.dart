@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
 import 'core/constants/app_constants.dart';
 import 'core/utils/navigation_utils.dart';
 import 'core/api/content_api.dart';
@@ -91,7 +94,20 @@ class HarmonyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light, // светлая тема, чтобы не было чёрного фона при отсутствии картинок
+      themeMode: ThemeMode.light,
+      localizationsDelegates: [
+        appLocalizationsDelegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      localeResolutionCallback: (locale, supported) {
+        for (final s in supported) {
+          if (locale != null && s.languageCode == locale.languageCode) return s;
+        }
+        return const Locale('en');
+      },
       home: const LoadingScreen(),
     );
   }
@@ -319,14 +335,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           
-          // Заголовок "Главная" по центру
+          // Заголовок по центру
           Positioned(
             top: 62,
             left: 0,
             right: 0,
             child: Center(
               child: Text(
-                'Главная',
+                AppLocalizations.of(context)!.homeTitle,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w400,
@@ -355,10 +371,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   const SizedBox(height: 32),
                   
-                  // Раздел "Сила мыслей"
                   if (_recommendedCards.isNotEmpty) ...[
                     Text(
-                      'Сила мыслей',
+                      AppLocalizations.of(context)!.powerOfThoughts,
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -373,10 +388,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 32),
                   ],
                   
-                  // Раздел "Популярное от Harmony"
                   if (_emergencyCards.isNotEmpty) ...[
                     Text(
-                      'Популярное от Harmony',
+                      AppLocalizations.of(context)!.popularFromHarmony,
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,

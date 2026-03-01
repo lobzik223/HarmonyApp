@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
@@ -158,7 +159,7 @@ class _SleepScreenState extends State<SleepScreen> {
                   // Заголовок "СОН"
                   Center(
                     child: Text(
-                      'СОН',
+                      AppLocalizations.of(context)!.sleepTitle,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 20,
@@ -180,7 +181,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'ИСКЛЮЧЕНИЕ КОШМАРОВ',
+                          AppLocalizations.of(context)!.nightmareExclusion,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -194,7 +195,7 @@ class _SleepScreenState extends State<SleepScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Все',
+                              AppLocalizations.of(context)!.all,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
@@ -254,7 +255,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'ДРУГОЕ НАПРАВЛЕНИЕ',
+                          AppLocalizations.of(context)!.otherDirection,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -268,7 +269,7 @@ class _SleepScreenState extends State<SleepScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Все',
+                              AppLocalizations.of(context)!.all,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,

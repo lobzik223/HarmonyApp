@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../main.dart';
 import '../../shared/models/meditation_track.dart';
@@ -156,7 +157,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       child: Text(
-                        'Назад',
+                        AppLocalizations.of(context)!.back,
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
@@ -256,7 +257,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        _track.title.isEmpty ? 'Название трека' : _track.title,
+                                        _track.title.isEmpty ? AppLocalizations.of(context)!.trackTitlePlaceholder : _track.title,
                                         style: GoogleFonts.inter(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
@@ -267,7 +268,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        _track.description.isEmpty ? 'Исполнитель' : _track.description,
+                                        _track.description.isEmpty ? AppLocalizations.of(context)!.artistPlaceholder : _track.description,
                                         style: GoogleFonts.inter(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w400,

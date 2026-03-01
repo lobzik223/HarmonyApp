@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
 
 /// Экран с текстом документа (политика конфиденциальности или пользовательское соглашение).
@@ -51,7 +52,7 @@ class LegalTextScreen extends StatelessWidget {
                                 children: [
                                   Icon(Icons.arrow_back_ios, size: 16, color: Colors.white),
                                   SizedBox(width: 4),
-                                  Text('Назад', style: TextStyle(fontSize: 16, color: Colors.white)),
+                                  Text(AppLocalizations.of(context)!.back, style: TextStyle(fontSize: 16, color: Colors.white)),
                                 ],
                               ),
                             ),
