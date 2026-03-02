@@ -102,9 +102,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Фон — чуть опущен вниз
+          // Фон — поднят выше, от верхнего края
           Positioned(
-            top: 48,
+            top: 0,
             left: 0,
             right: 0,
             bottom: 0,

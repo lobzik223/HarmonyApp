@@ -374,29 +374,32 @@ class _PremiumScreenState extends State<PremiumScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Круг с логотипом Harmony (светло-голубой) — компактный размер
+        // Круг побольше, иконка логотипа внутри — меньше
         Container(
-          width: 20,
-          height: 20,
+          width: 32,
+          height: 32,
           decoration: const BoxDecoration(
             color: Color(0xFF5BB8E8),
             shape: BoxShape.circle,
           ),
           child: ClipOval(
-            child: ColorFiltered(
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-              child: Image.asset(
-                'assets/icons/harmonyicon.png',
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 10),
+            child: Padding(
+              padding: const EdgeInsets.all(7),
+              child: ColorFiltered(
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                child: Image.asset(
+                  'assets/icons/harmonyicon.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 12),
+                ),
               ),
             ),
           ),
         ),
         const SizedBox(width: -2),
-        // Pill с текстом PREMIUM — меньше
+        // Pill PREMIUM — крупнее
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
@@ -404,15 +407,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 Color(0xFF46E4E3),
               ],
             ),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Text(
             AppLocalizations.of(context)!.premiumBadge,
             style: GoogleFonts.inter(
-              fontSize: 10,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
               color: Colors.white,
-              letterSpacing: 0.3,
+              letterSpacing: 0.5,
             ),
           ),
         ),
@@ -429,8 +432,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),

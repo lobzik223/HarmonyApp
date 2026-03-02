@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -19,7 +20,7 @@ import 'features/player/player_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'shared/widgets/harmony_bottom_nav.dart';
 
-/// Модель карточки для главного экрана
+/// Модель карточки для главного экрана (раздел «О силе мышления» и др.)
 class HomeCard {
   final String id;
   final String image;
@@ -30,6 +31,7 @@ class HomeCard {
   final String? duration;
   final String? views;
   final bool isLocked;
+  final String? descriptionFull;
 
   HomeCard({
     required this.id,
@@ -41,6 +43,7 @@ class HomeCard {
     this.duration,
     this.views,
     this.isLocked = false,
+    this.descriptionFull,
   });
 
   factory HomeCard.fromJson(Map<String, dynamic> json) {
@@ -54,6 +57,7 @@ class HomeCard {
       duration: json['duration'] as String?,
       views: json['views'] as String?,
       isLocked: json['isLocked'] as bool? ?? false,
+      descriptionFull: json['descriptionFull'] as String?,
     );
   }
 
@@ -62,6 +66,19 @@ class HomeCard {
     final base = AppConstants.baseUrl.replaceFirst(RegExp(r'/$'), '');
     String image = json['imageUrl'] as String? ?? '';
     if (image.isNotEmpty && !image.startsWith('http')) image = '$base$image';
+    final publishedAt = json['publishedAt'] as String?;
+    String? dateStr;
+    if (publishedAt != null && publishedAt.isNotEmpty) {
+      try {
+        final d = DateTime.parse(publishedAt);
+        const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        if (d.month >= 1 && d.month <= 12) {
+          dateStr = '${d.day} ${months[d.month - 1]}';
+        }
+      } catch (_) {}
+    }
+    final durationMin = json['durationMinutes'] as int?;
+    final duration = durationMin != null ? '$durationMin мин' : null;
     return HomeCard(
       id: json['id'] as String? ?? '',
       image: image,
@@ -69,6 +86,9 @@ class HomeCard {
       subtitle: json['descriptionShort'] as String?,
       type: json['blockType'] as String? ?? 'FEATURED',
       isLocked: false,
+      date: dateStr,
+      duration: duration,
+      descriptionFull: json['descriptionFull'] as String?,
     );
   }
 }
@@ -132,11 +152,22 @@ class _HomeScreenState extends State<HomeScreen> {
   List<HomeCard> _recommendedCards = [];
   List<HomeCard> _emergencyCards = [];
 
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
     _loadSavedBackground();
     _loadHomeCards();
+    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+      if (mounted) _loadHomeCards();
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
   
   // Загружаем карточки с API (без демо)
@@ -361,11 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Главная карточка
-                  if (_featuredCard != null) _buildFeaturedCard(_featuredCard!),
-                  
-                  const SizedBox(height: 32),
-                  
+                  // Первый раздел: О силе мышления (карточки с бэкенда)
                   if (_recommendedCards.isNotEmpty) ...[
                     Text(
                       AppLocalizations.of(context)!.powerOfThoughts,
@@ -379,10 +406,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildRecommendedCards(),
+                    _buildMindPowerCards(),
                     const SizedBox(height: 32),
                   ],
-                  
+                  if (_featuredCard != null) ...[
+                    _buildFeaturedCard(_featuredCard!),
+                    const SizedBox(height: 32),
+                  ],
                   if (_emergencyCards.isNotEmpty) ...[
                     Text(
                       AppLocalizations.of(context)!.popularFromHarmony,
@@ -572,20 +602,132 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-  // Рекомендованные карточки (две рядом)
-  Widget _buildRecommendedCards() {
-    final cards = _recommendedCards.take(2).toList();
-    return Row(
-      children: cards.asMap().entries.map((entry) {
-        final index = entry.key;
-        final card = entry.value;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: index == 0 ? 8 : 0),
-            child: _buildSmallCard(card),
-          ),
+  // Карточки раздела «О силе мышления» — в ряд, дизайн как в примере
+  Widget _buildMindPowerCards() {
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _recommendedCards.length,
+        itemBuilder: (context, index) {
+          final card = _recommendedCards[index];
+          return Padding(
+            padding: EdgeInsets.only(right: index < _recommendedCards.length - 1 ? 12 : 0),
+            child: _buildMindPowerCard(card),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMindPowerCard(HomeCard card) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          noAnimationRoute(HomeCardDetailScreen(card: card)),
         );
-      }).toList(),
+      },
+      child: SizedBox(
+        width: 280,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.network(
+                  card.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: const Color(0xFF1A237E),
+                    child: const Icon(Icons.image, color: Colors.white54, size: 48),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 88,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1A237E),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        card.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (card.subtitle != null && card.subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          card.subtitle!,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white70,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              if (card.date != null)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      card.date!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                bottom: 96,
+                left: 12,
+                child: Row(
+                  children: [
+                    if (card.isLocked)
+                      const Icon(Icons.lock, size: 14, color: Colors.white70),
+                    if (card.isLocked) const SizedBox(width: 4),
+                    if (card.duration != null)
+                      Text(
+                        card.duration!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white70,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
   
@@ -722,6 +864,112 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+      ),
+    );
+  }
+}
+
+/// Экран детали карточки (обложка, название, полное описание) — как в примере с курсом
+class HomeCardDetailScreen extends StatelessWidget {
+  const HomeCardDetailScreen({super.key, required this.card});
+  final HomeCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.4,
+                width: double.infinity,
+                child: Image.network(
+                  card.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: const Color(0xFF2C2F4D),
+                    child: const Icon(Icons.image, color: Colors.white54, size: 64),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2C2F4D),
+                    borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.title,
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (card.subtitle != null && card.subtitle!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            card.subtitle!,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        if (card.descriptionFull != null && card.descriptionFull!.isNotEmpty) ...[
+                          Text(
+                            card.descriptionFull!,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              height: 1.5,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ] else if (card.subtitle != null && card.subtitle!.isNotEmpty)
+                          Text(
+                            card.subtitle!,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              height: 1.5,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16, top: 8),
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFB300).withOpacity(0.95),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
