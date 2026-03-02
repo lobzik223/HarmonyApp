@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadSavedBackground();
     _loadHomeCards();
-    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 3), (_) {
       if (mounted) _loadHomeCards();
     });
   }
