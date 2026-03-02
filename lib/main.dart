@@ -704,26 +704,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-              Positioned(
-                bottom: 96,
-                left: 12,
-                child: Row(
-                  children: [
-                    if (card.isLocked)
-                      const Icon(Icons.lock, size: 14, color: Colors.white70),
-                    if (card.isLocked) const SizedBox(width: 4),
-                    if (card.duration != null)
-                      Text(
-                        card.duration!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white70,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
