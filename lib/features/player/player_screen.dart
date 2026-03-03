@@ -62,6 +62,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   void _onTrackPlay(PlayerTrack track) {
+    ContentApi.registerTrackListen(track.id).catchError((_) {});
     RecentTracksStorage.addRecentTrack(track).then((_) async {
       final recent = await RecentTracksStorage.getRecentTracks();
       if (mounted) setState(() => _recentTracks = recent);

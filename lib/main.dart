@@ -93,6 +93,53 @@ class HomeCard {
   }
 }
 
+class CourseCard {
+  final String id;
+  final String title;
+  final String? subtitle;
+  final String image;
+  final String? descriptionFull;
+  final List<HomeCard> tracks;
+
+  CourseCard({
+    required this.id,
+    required this.title,
+    required this.image,
+    this.subtitle,
+    this.descriptionFull,
+    this.tracks = const [],
+  });
+
+  factory CourseCard.fromApi(Map<String, dynamic> json) {
+    final base = AppConstants.baseUrl.replaceFirst(RegExp(r'/$'), '');
+    String image = json['imageUrl'] as String? ?? '';
+    if (image.isNotEmpty && !image.startsWith('http')) image = '$base$image';
+    final courseTracks = (json['tracks'] as List<dynamic>? ?? [])
+        .map((e) => e as Map<String, dynamic>)
+        .map((e) {
+          final t = e['track'] as Map<String, dynamic>? ?? {};
+          return HomeCard(
+            id: t['id'] as String? ?? '',
+            image: ContentApi.mediaUrl(t['coverUrl'] as String?),
+            title: t['title'] as String? ?? '',
+            subtitle: t['descriptionShort'] as String?,
+            type: 'TRACK',
+            duration: null,
+            isLocked: t['isPremium'] as bool? ?? false,
+          );
+        })
+        .toList();
+    return CourseCard(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      subtitle: json['descriptionShort'] as String?,
+      descriptionFull: json['descriptionFull'] as String?,
+      image: image,
+      tracks: courseTracks,
+    );
+  }
+}
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Ловим ошибки Flutter, чтобы в консоли было видно причину чёрного экрана
@@ -150,7 +197,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // Данные карточек
   HomeCard? _featuredCard;
   List<HomeCard> _recommendedCards = [];
-  List<HomeCard> _emergencyCards = [];
+  List<HomeCard> _popularTrackCards = [];
+  List<CourseCard> _courses = [];
 
   Timer? _refreshTimer;
 
@@ -187,8 +235,26 @@ class _HomeScreenState extends State<HomeScreen> {
       _recommendedCards = (home['recommended'] as List<dynamic>?)
           ?.map((e) => HomeCard.fromApiArticle(e as Map<String, dynamic>))
           .toList() ?? [];
-      _emergencyCards = (home['emergency'] as List<dynamic>?)
-          ?.map((e) => HomeCard.fromApiArticle(e as Map<String, dynamic>))
+      _popularTrackCards = (home['popularTracks'] as List<dynamic>?)
+          ?.map((e) {
+            final track = e as Map<String, dynamic>;
+            final title = track['title'] as String? ?? '';
+            final subtitle = track['descriptionShort'] as String?;
+            final image = ContentApi.mediaUrl(track['coverUrl'] as String?);
+            final listens = (track['listenCount'] as int?) ?? 0;
+            return HomeCard(
+              id: track['id'] as String? ?? '',
+              image: image,
+              title: title,
+              subtitle: subtitle,
+              type: '$listens прослушиваний',
+              isLocked: track['isPremium'] as bool? ?? false,
+              descriptionFull: subtitle,
+            );
+          })
+          .toList() ?? [];
+      _courses = (home['courses'] as List<dynamic>?)
+          ?.map((e) => CourseCard.fromApi(e as Map<String, dynamic>))
           .toList() ?? [];
       if (mounted) setState(() {});
     } catch (e) {
@@ -196,7 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _featuredCard = null;
           _recommendedCards = [];
-          _emergencyCards = [];
+          _popularTrackCards = [];
+          _courses = [];
         });
       }
     }
@@ -413,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildFeaturedCard(_featuredCard!),
                     const SizedBox(height: 32),
                   ],
-                  if (_emergencyCards.isNotEmpty) ...[
+                  if (_popularTrackCards.isNotEmpty) ...[
                     Text(
                       AppLocalizations.of(context)!.popularFromHarmony,
                       style: GoogleFonts.inter(
@@ -426,7 +493,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildEmergencyCards(),
+                    _buildPopularTracksCards(),
+                    const SizedBox(height: 32),
+                  ],
+                  if (_courses.isNotEmpty) ...[
+                    Text(
+                      'Курсы',
+                      style: GoogleFonts.inter(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        height: 1.0,
+                        letterSpacing: 0.48,
+                        color: Colors.white,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCourseCards(),
                     const SizedBox(height: 32),
                   ],
                 ],
@@ -470,7 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Изображение
             Positioned.fill(
-              child: Image.asset(
+              child: Image.network(
                 card.image,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
@@ -711,10 +794,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-  // Экстренные карточки
-  Widget _buildEmergencyCards() {
+  // Популярные треки (до 10) — карточки без цветных линий поверх фото.
+  Widget _buildPopularTracksCards() {
     return Column(
-      children: _emergencyCards.map((card) {
+      children: _popularTrackCards.map((card) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: _buildSmallCard(card),
@@ -722,8 +805,82 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList(),
     );
   }
+
+  Widget _buildCourseCards() {
+    return Column(
+      children: _courses.map((course) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                noAnimationRoute(CourseDetailScreen(course: course)),
+              );
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E2768),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: 190,
+                      width: double.infinity,
+                      child: Image.network(
+                        course.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: const Color(0xFF2C2F4D),
+                          child: const Icon(Icons.image, color: Colors.white54, size: 40),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (course.subtitle != null && course.subtitle!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              course.subtitle!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white70,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
   
-  // Маленькая карточка
+  // Маленькая карточка (популярный трек): текст снизу, без цветных линий на фото.
   Widget _buildSmallCard(HomeCard card) {
     return GestureDetector(
       onTap: () {
@@ -733,96 +890,37 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
-        height: 180,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Stack(
-          children: [
-            // Изображение
-            Positioned.fill(
-              child: Image.asset(
-                card.image,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: const Color(0xFF1E2768),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 150,
+                width: double.infinity,
+                child: Image.network(
+                  card.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
                     color: Colors.grey[800],
                     child: const Center(
                       child: Icon(Icons.image, color: Colors.white54, size: 32),
                     ),
-                  );
-                },
-              ),
-            ),
-            // Градиент снизу
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 80,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.7),
-                    ],
                   ),
                 ),
               ),
-            ),
-            // Замок/просмотры в левом нижнем углу
-            Positioned(
-              bottom: 50,
-              left: 12,
-              child: Row(
-                children: [
-                  if (card.isLocked)
-                    const Icon(
-                      Icons.lock,
-                      size: 12,
-                      color: Colors.white,
-                    ),
-                  if (card.isLocked) const SizedBox(width: 4),
-                  if (card.views != null)
-                    Text(
-                      card.views!,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white,
-                      ),
-                    ),
-                  if (card.duration != null)
-                    Text(
-                      card.duration!,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            // Текст внизу
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       card.title,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                       maxLines: 1,
@@ -840,10 +938,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -927,6 +1024,154 @@ class HomeCardDetailScreen extends StatelessWidget {
                           ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16, top: 8),
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFB300).withOpacity(0.95),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CourseDetailScreen extends StatelessWidget {
+  const CourseDetailScreen({super.key, required this.course});
+  final CourseCard course;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.42,
+                width: double.infinity,
+                child: Image.network(
+                  course.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: const Color(0xFF2C2F4D),
+                    child: const Icon(Icons.image, color: Colors.white54, size: 64),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2C2F4D),
+                    borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                    children: [
+                      Text(
+                        course.title,
+                        style: GoogleFonts.inter(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (course.subtitle != null && course.subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          course.subtitle!,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      Text(
+                        'Треки курса',
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...course.tracks.asMap().entries.map((entry) {
+                        final idx = entry.key + 1;
+                        final track = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.06),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF5B5CE6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '$idx',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        track.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      if (track.subtitle != null && track.subtitle!.isNotEmpty)
+                                        Text(
+                                          track.subtitle!,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                if (track.isLocked) const Icon(Icons.lock_outline, color: Colors.white54),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
               ),
