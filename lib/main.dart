@@ -17,7 +17,9 @@ import 'features/meditation/meditation_screen.dart';
 import 'features/sleep/sleep_screen.dart';
 import 'features/tasks/tasks_screen.dart';
 import 'features/player/player_screen.dart';
+import 'features/player/open_player_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'shared/models/meditation_track.dart';
 import 'shared/widgets/harmony_bottom_nav.dart';
 
 /// Модель карточки для главного экрана (раздел «О силе мышления» и др.)
@@ -199,6 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<HomeCard> _recommendedCards = [];
   List<HomeCard> _popularTrackCards = [];
   List<CourseCard> _courses = [];
+  /// Секции главной (Гармония, Расслабление, Осознанность, Энергия) с треками.
+  List<Map<String, dynamic>> _homeSections = [];
 
   Timer? _refreshTimer;
 
@@ -256,6 +260,20 @@ class _HomeScreenState extends State<HomeScreen> {
       _courses = (home['courses'] as List<dynamic>?)
           ?.map((e) => CourseCard.fromApi(e as Map<String, dynamic>))
           .toList() ?? [];
+      final rawHomeSections = data['homeSections'] as List<dynamic>? ?? [];
+      _homeSections = rawHomeSections.map((s) {
+        final section = s as Map<String, dynamic>;
+        final slug = section['slug'] as String? ?? '';
+        final tracksList = section['tracks'] as List<dynamic>? ?? [];
+        final tracks = tracksList
+            .map((t) => MeditationTrack.fromApiJson(t as Map<String, dynamic>, category: slug))
+            .toList();
+        return <String, dynamic>{
+          'name': section['name'] as String? ?? '',
+          'slug': slug,
+          'tracks': tracks,
+        };
+      }).toList();
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
@@ -264,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _recommendedCards = [];
           _popularTrackCards = [];
           _courses = [];
+          _homeSections = [];
         });
       }
     }
@@ -496,6 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildPopularTracksCards(),
                     const SizedBox(height: 32),
                   ],
+                  ..._homeSections.where((s) => (s['tracks'] as List<MeditationTrack>).isNotEmpty).map((section) => _buildHomeSectionBlock(section)),
                   if (_courses.isNotEmpty) ...[
                     Text(
                       'Курсы',
@@ -806,6 +826,124 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Блок секции главной (Гармония, Расслабление, Осознанность, Энергия): заголовок + горизонтальный список треков.
+  Widget _buildHomeSectionBlock(Map<String, dynamic> section) {
+    final name = section['name'] as String? ?? '';
+    final tracks = section['tracks'] as List<MeditationTrack>? ?? [];
+    if (tracks.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            name,
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              height: 1.0,
+              letterSpacing: 0.48,
+              color: Colors.white,
+              decoration: TextDecoration.none,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: tracks.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final track = tracks[index];
+                return _buildHomeSectionTrackCard(track, tracks, index);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeSectionTrackCard(MeditationTrack track, List<MeditationTrack> tracks, int index) {
+    final durationStr = track.durationSeconds != null
+        ? '${(track.durationSeconds! / 60).round()} мин'
+        : '';
+    return GestureDetector(
+      onTap: () {
+        ContentApi.registerTrackListen(track.id).catchError((_) {});
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => _HomeSectionPlayerScreen(
+              tracks: tracks,
+              initialIndex: index,
+            ),
+          ),
+        );
+      },
+      child: SizedBox(
+        width: 160,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFF1E2768),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 140,
+                  width: double.infinity,
+                  child: Image.network(
+                    track.image,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.grey[800],
+                      child: const Center(
+                        child: Icon(Icons.music_note, color: Colors.white54, size: 40),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        track.title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (durationStr.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          durationStr,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCourseCards() {
     return Column(
       children: _courses.map((course) {
@@ -942,6 +1080,67 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Плеер для треков из секций главной (Гармония, Расслабление и т.д.): обложка, воспроизведение, переключение треков.
+class _HomeSectionPlayerScreen extends StatefulWidget {
+  const _HomeSectionPlayerScreen({
+    required this.tracks,
+    required this.initialIndex,
+  });
+  final List<MeditationTrack> tracks;
+  final int initialIndex;
+
+  @override
+  State<_HomeSectionPlayerScreen> createState() => _HomeSectionPlayerScreenState();
+}
+
+class _HomeSectionPlayerScreenState extends State<_HomeSectionPlayerScreen> {
+  late int _currentIndex;
+  bool _isPlaying = false;
+  double _progress = 0.0;
+  String _currentTime = '0:00';
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex.clamp(0, widget.tracks.length - 1);
+  }
+
+  MeditationTrack get _track => widget.tracks[_currentIndex];
+  String get _totalTime => MeditationTrack.formatDuration(_track.durationSeconds);
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenPlayerScreen(
+      track: _track,
+      tracks: widget.tracks,
+      initialIndex: _currentIndex,
+      isPlaying: _isPlaying,
+      progress: _progress,
+      currentTime: _currentTime,
+      totalTime: _totalTime,
+      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+      onPrevious: () {
+        if (_currentIndex > 0) {
+          setState(() {
+            _currentIndex--;
+            _progress = 0.0;
+            _currentTime = '0:00';
+          });
+        }
+      },
+      onNext: () {
+        if (_currentIndex < widget.tracks.length - 1) {
+          setState(() {
+            _currentIndex++;
+            _progress = 0.0;
+            _currentTime = '0:00';
+          });
+        }
+      },
     );
   }
 }

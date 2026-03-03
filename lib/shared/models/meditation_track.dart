@@ -11,6 +11,8 @@ class MeditationTrack {
   final String category;
   final bool isPremium;
   final bool isPlaying;
+  /// Длительность в секундах (для отображения "N мин" и totalTime в плеере).
+  final int? durationSeconds;
 
   MeditationTrack({
     required this.id,
@@ -23,6 +25,7 @@ class MeditationTrack {
     required this.category,
     required this.isPremium,
     required this.isPlaying,
+    this.durationSeconds,
   });
 
   factory MeditationTrack.fromJson(Map<String, dynamic> json) {
@@ -37,6 +40,7 @@ class MeditationTrack {
       category: json['category'] as String? ?? 'relaxation',
       isPremium: json['isPremium'] as bool? ?? false,
       isPlaying: json['isPlaying'] as bool? ?? false,
+      durationSeconds: json['durationSeconds'] as int?,
     );
   }
 
@@ -58,6 +62,7 @@ class MeditationTrack {
       category: category,
       isPremium: json['isPremium'] as bool? ?? false,
       isPlaying: false,
+      durationSeconds: json['durationSeconds'] as int?,
     );
   }
 
@@ -73,7 +78,16 @@ class MeditationTrack {
       'category': category,
       'isPremium': isPremium,
       'isPlaying': isPlaying,
+      if (durationSeconds != null) 'durationSeconds': durationSeconds,
     };
+  }
+
+  /// Форматирует длительность для плеера, например "3:45".
+  static String formatDuration(int? durationSeconds) {
+    if (durationSeconds == null || durationSeconds <= 0) return '0:00';
+    final m = durationSeconds ~/ 60;
+    final s = durationSeconds % 60;
+    return '$m:${s.toString().padLeft(2, '0')}';
   }
 }
 
