@@ -328,6 +328,7 @@ class _SleepScreenState extends State<SleepScreen> {
           // Мини-плеер
           if (_activeTrackId != null)
             MiniPlayer(
+              bottomOffset: HarmonyBottomNav.totalHeight(context),
               track: _allTracks.firstWhere(
                 (t) => t.id == _activeTrackId,
                 orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(

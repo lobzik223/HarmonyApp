@@ -413,6 +413,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
           // Мини-плеер (отображается над нижним меню, если есть активный трек)
           if (_activeTrackId != null)
             MiniPlayer(
+              bottomOffset: HarmonyBottomNav.totalHeight(context),
               track: _allTracks.firstWhere(
                 (t) => t.id == _activeTrackId,
                 orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(

@@ -599,6 +599,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           if (_activeTrackId != null)
             MiniPlayer(
+              bottomOffset: HarmonyBottomNav.totalHeight(context),
               track: _activeTrackContext.firstWhere(
                 (t) => t.id == _activeTrackId,
                 orElse: () => _activeTrackContext.isNotEmpty ? _activeTrackContext.first : MeditationTrack(
@@ -826,10 +827,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-  // Карточки раздела «О силе мышления» — в ряд, дизайн как в примере
+  // Карточки раздела «О силе мышления» — в ряд: фото целиком сверху, текст снизу под карточкой
+  static const double _mindPowerImageHeight = 180.0;
+
   Widget _buildMindPowerCards() {
     return SizedBox(
-      height: 220,
+      height: _mindPowerImageHeight + 92,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _recommendedCards.length,
@@ -853,83 +856,95 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: SizedBox(
         width: 280,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Image.network(
-                  card.image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFF1A237E),
-                    child: const Icon(Icons.image, color: Colors.white54, size: 48),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Фото целиком, без наложения текста
+            SizedBox(
+              height: _mindPowerImageHeight,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      card.image,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A237E),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(Icons.image, color: Colors.white54, size: 48),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 88,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1A237E),
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        card.title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                  if (card.date != null)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
                           color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (card.subtitle != null && card.subtitle!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          card.subtitle!,
+                        child: Text(
+                          card.date!,
                           style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              if (card.date != null)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      card.date!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
                       ),
                     ),
+                ],
+              ),
+            ),
+            // Название и описание под карточкой (тёмно-синяя панель, как в примере)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A237E),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    card.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-            ],
-          ),
+                  if (card.subtitle != null && card.subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      card.subtitle!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white70,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

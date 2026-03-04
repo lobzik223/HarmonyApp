@@ -15,6 +15,8 @@ class MiniPlayer extends StatelessWidget {
   final bool isPlaying;
   final String currentTime;
   final String totalTime;
+  /// Отступ снизу: ставим высоту нижней панели, чтобы белый фон плеера не перекрывал навбар.
+  final double bottomOffset;
 
   const MiniPlayer({
     super.key,
@@ -27,6 +29,7 @@ class MiniPlayer extends StatelessWidget {
     this.isPlaying = false,
     this.currentTime = '10:56',
     this.totalTime = '10:56',
+    this.bottomOffset = 0.0,
   });
 
   @override
@@ -36,7 +39,7 @@ class MiniPlayer extends StatelessWidget {
     }
 
     return Positioned(
-      bottom: 0, // Начинаем с самого низа, чтобы белый фон продолжался под меню
+      bottom: bottomOffset,
       left: 0,
       right: 0,
       child: GestureDetector(
