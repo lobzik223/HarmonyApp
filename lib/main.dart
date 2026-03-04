@@ -599,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           if (_activeTrackId != null)
             MiniPlayer(
-              bottomOffset: HarmonyBottomNav.totalHeight(context),
+              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
               track: _activeTrackContext.firstWhere(
                 (t) => t.id == _activeTrackId,
                 orElse: () => _activeTrackContext.isNotEmpty ? _activeTrackContext.first : MeditationTrack(
@@ -1142,7 +1142,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF202020)),
+                      child: ClipOval(
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Image.asset(
+                            'assets/icons/zvezda.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF202020)),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   if (track.isPremium)

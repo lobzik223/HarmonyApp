@@ -27,10 +27,15 @@ class HarmonyBottomNav extends StatelessWidget {
 
   static const double _barHeight = 52.0;
   static const double _backgroundOffset = 2.0;
+  static const double _miniPlayerOverlay = 20.0;
 
   /// Высота нижней панели (для позиционирования мини-плеера над ней).
   static double totalHeight(BuildContext context) =>
       _barHeight + _backgroundOffset + MediaQuery.of(context).padding.bottom;
+
+  /// Отступ для мини-плеера: слегка заходит за фон нижней панели.
+  static double miniPlayerBottomOffset(BuildContext context) =>
+      (totalHeight(context) - _miniPlayerOverlay).clamp(0.0, double.infinity);
 
   @override
   Widget build(BuildContext context) {

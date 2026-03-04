@@ -413,7 +413,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
           // Мини-плеер (отображается над нижним меню, если есть активный трек)
           if (_activeTrackId != null)
             MiniPlayer(
-              bottomOffset: HarmonyBottomNav.totalHeight(context),
+              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
               track: _allTracks.firstWhere(
                 (t) => t.id == _activeTrackId,
                 orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(
@@ -578,21 +578,26 @@ class _MeditationScreenState extends State<MeditationScreen> {
                       ),
                     ),
                   ),
-                // Иконка в левом верхнем углу (медитация для отдыха, звезда для вдохновения)
+                // Иконка медитации в левом верхнем углу
                 Positioned(
                   top: 10,
                   left: 10,
                   child: Container(
                     width: 28,
                     height: 28,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      isInspiration ? Icons.star : Icons.self_improvement,
-                      size: 16,
-                      color: const Color(0xFF202020),
+                    child: ClipOval(
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Image.asset(
+                          'assets/icons/meditationicon.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.self_improvement, size: 16, color: Color(0xFF202020)),
+                        ),
+                      ),
                     ),
                   ),
                 ),

@@ -49,7 +49,7 @@ class MiniPlayer extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Основной контент плеера (над меню)
+            // Основной контент плеера
             Container(
               width: double.infinity, // Максимальная ширина без margin
               decoration: BoxDecoration(
@@ -127,7 +127,7 @@ class MiniPlayer extends StatelessWidget {
             ),
             // Основной контент плеера
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Увеличена высота и отступы
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
                   // Иконка альбома с наушниками (слева)
@@ -301,13 +301,6 @@ class MiniPlayer extends StatelessWidget {
           ],
         ),
           ),
-          // Белый фон, продолжающийся под меню (высота меню 63)
-            Container(
-              height: 63,
-              width: double.infinity,
-              color: Colors.white, // Белый фон под меню
-              margin: const EdgeInsets.symmetric(horizontal: 0), // Без отступов для полной ширины
-            ),
           ],
         ),
       ),

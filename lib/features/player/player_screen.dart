@@ -190,7 +190,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           // Мини-плеер
           if (_activeTrackId != null)
             MiniPlayer(
-              bottomOffset: HarmonyBottomNav.totalHeight(context),
+              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
               track: _createMeditationTrackFromPlayerTrack(
                 _tracks.firstWhere((t) => t.id == _activeTrackId),
               ),

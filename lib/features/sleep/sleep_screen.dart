@@ -328,7 +328,7 @@ class _SleepScreenState extends State<SleepScreen> {
           // Мини-плеер
           if (_activeTrackId != null)
             MiniPlayer(
-              bottomOffset: HarmonyBottomNav.totalHeight(context),
+              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
               track: _allTracks.firstWhere(
                 (t) => t.id == _activeTrackId,
                 orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(
@@ -492,21 +492,26 @@ class _SleepScreenState extends State<SleepScreen> {
                       ),
                     ),
                   ),
-                // Иконка луны со звездами в левом верхнем углу
+                // Иконка сна в левом верхнем углу
                 Positioned(
                   top: 10,
                   left: 10,
                   child: Container(
                     width: 28,
                     height: 28,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.bedtime,
-                      size: 16,
-                      color: Color(0xFF202020),
+                    child: ClipOval(
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Image.asset(
+                          'assets/icons/soonicon.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.bedtime, size: 16, color: Color(0xFF202020)),
+                        ),
+                      ),
                     ),
                   ),
                 ),
