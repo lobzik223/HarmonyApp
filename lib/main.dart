@@ -832,7 +832,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMindPowerCards() {
     return SizedBox(
-      height: _mindPowerImageHeight + 92,
+      height: _mindPowerImageHeight + 58,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _recommendedCards.length,
@@ -906,36 +906,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            // Название и описание под карточкой (тёмно-синяя панель, как в примере)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A237E),
-                borderRadius: BorderRadius.circular(12),
-              ),
+            // Название и описание под карточкой — без фона, компактный текст
+            Padding(
+              padding: const EdgeInsets.only(left: 4, top: 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     card.title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
+                      height: 1.25,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (card.subtitle != null && card.subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       card.subtitle!,
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
                         fontWeight: FontWeight.w400,
-                        color: Colors.white70,
+                        color: Colors.white.withOpacity(0.85),
+                        height: 1.25,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
