@@ -479,7 +479,18 @@ class _SleepScreenState extends State<SleepScreen> {
                           ),
                         ),
                 ),
-                
+                if (track.isPremium)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 3.5, sigmaY: 3.5),
+                        child: Container(
+                          color: Colors.white.withOpacity(0.05),
+                        ),
+                      ),
+                    ),
+                  ),
                 // Иконка луны со звездами в левом верхнем углу
                 Positioned(
                   top: 10,
@@ -498,34 +509,40 @@ class _SleepScreenState extends State<SleepScreen> {
                     ),
                   ),
                 ),
-                
-                // Центральный overlay - Play/Pause
-                Center(
-                  child: ClipOval(
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF000000).withOpacity(0.15),
-                          shape: BoxShape.circle,
+                if (track.isPremium)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 62,
+                    child: Center(child: _buildPremiumTrackBadge()),
+                  )
+                else
+                  Center(
+                    child: ClipOval(
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF000000).withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: (_activeTrackId == track.id && _isPlaying)
+                              ? const Icon(
+                                  Icons.pause,
+                                  size: 16,
+                                  color: Colors.white,
+                                )
+                              : const Icon(
+                                  Icons.play_arrow,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
                         ),
-                        child: (_activeTrackId == track.id && _isPlaying)
-                            ? const Icon(
-                                Icons.pause,
-                                size: 16,
-                                color: Colors.white,
-                              )
-                            : const Icon(
-                                Icons.play_arrow,
-                                size: 20,
-                                color: Colors.white,
-                              ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -560,13 +577,50 @@ class _SleepScreenState extends State<SleepScreen> {
     );
   }
 
-  
-
-  
-
-  
-
-  
-
+  Widget _buildPremiumTrackBadge() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: const BoxDecoration(
+            color: Color(0xFF4DB2EA),
+            shape: BoxShape.circle,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              child: Image.asset(
+                'assets/icons/harmonyicon.png',
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: -2),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF46AEE8), Color(0xFF46E4E3)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            AppLocalizations.of(context)!.premiumBadge,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 

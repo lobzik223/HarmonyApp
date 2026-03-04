@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../core/api/content_api.dart';
 import '../../main.dart';
 import '../../shared/models/meditation_track.dart';
 import '../../shared/widgets/harmony_bottom_nav.dart';
@@ -47,6 +48,8 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
   late bool _isPlaying;
   late double _progress;
   late int _currentIndex;
+  late String _currentTime;
+  late String _totalTime;
 
   List<MeditationTrack> get _tracks => widget.tracks ?? [widget.track];
   MeditationTrack get _track => _tracks[_currentIndex.clamp(0, _tracks.length - 1)];
@@ -56,9 +59,24 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
     super.initState();
     _isPlaying = widget.isPlaying;
     _progress = widget.progress;
+    _currentTime = widget.currentTime;
     _currentIndex = widget.tracks != null
         ? widget.initialIndex.clamp(0, widget.tracks!.length - 1)
         : 0;
+    _totalTime = _resolveTotalTime();
+    _registerOpenedTrack();
+  }
+
+  void _registerOpenedTrack() {
+    if (_track.id.isEmpty) return;
+    ContentApi.registerTrackListen(_track.id).catchError((_) {});
+  }
+
+  String _resolveTotalTime() {
+    if (_track.durationSeconds != null && _track.durationSeconds! > 0) {
+      return MeditationTrack.formatDuration(_track.durationSeconds);
+    }
+    return widget.totalTime;
   }
 
   void _handlePlayPause() {
@@ -71,7 +89,10 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
       setState(() {
         _currentIndex = _currentIndex - 1;
         _progress = 0.0;
+        _currentTime = '0:00';
+        _totalTime = _resolveTotalTime();
       });
+      _registerOpenedTrack();
     }
     if (widget.tracks == null) widget.onPrevious();
   }
@@ -81,7 +102,10 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
       setState(() {
         _currentIndex = _currentIndex + 1;
         _progress = 0.0;
+        _currentTime = '0:00';
+        _totalTime = _resolveTotalTime();
       });
+      _registerOpenedTrack();
     }
     if (widget.tracks == null) widget.onNext();
   }
@@ -170,87 +194,71 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
               ),
             ),
           ),
-          // Нижняя часть: панель плеера + нижнее меню
+          // Нижняя часть: стеклянная панель плеера + нижнее меню
           Align(
             alignment: Alignment.bottomCenter,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Transform.translate(
-                  offset: const Offset(0, 28),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // Слой стекла (блюр + полупрозрачность)
-                      Positioned.fill(
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(28),
-                            topRight: Radius.circular(28),
-                          ),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.42),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(28),
-                                  topRight: Radius.circular(28),
-                                ),
-                              ),
-                            ),
-                          ),
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.24),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(24),
+                          topRight: Radius.circular(24),
+                        ),
+                        border: Border(
+                          top: BorderSide(color: Colors.white.withOpacity(0.22), width: 1),
                         ),
                       ),
-                      // Контент панели (увеличенная высота панели — отступы сверху и снизу)
-                      Column(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(left: 10, right: 10, top: 20, bottom: 12),
+                            padding: const EdgeInsets.only(left: 12, right: 12, top: 10),
+                            child: _buildProgressBar(),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12, right: 12, top: 4),
                             child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                SizedBox(
-                                  width: 52,
-                                  child: Text(
-                                    widget.currentTime,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                Text(
+                                  _currentTime,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withOpacity(0.86),
                                   ),
                                 ),
-                                Expanded(child: _buildProgressBar()),
-                                SizedBox(
-                                  width: 52,
-                                  child: Text(
-                                    widget.totalTime,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                    textAlign: TextAlign.right,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                const Spacer(),
+                                Text(
+                                  _totalTime,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withOpacity(0.86),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.only(left: 12, right: 12, top: 4, bottom: 28),
+                            padding: const EdgeInsets.fromLTRB(10, 8, 10, 14),
                             child: Row(
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: _buildCoverThumbnail(56, 56),
+                                  child: _buildCoverThumbnail(52, 52),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,17 +270,18 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
                                           color: Colors.white,
+                                          height: 1.1,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 2),
                                       Text(
                                         _track.description.isEmpty ? AppLocalizations.of(context)!.artistPlaceholder : _track.description,
                                         style: GoogleFonts.inter(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w400,
-                                          color: Colors.white.withOpacity(0.85),
+                                          color: Colors.white.withOpacity(0.82),
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -280,22 +289,21 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                                     ],
                                   ),
                                 ),
+                                const SizedBox(width: 8),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _buildControlButton(
-                                      icon: Icons.skip_previous,
+                                      icon: Icons.skip_previous_rounded,
                                       onTap: _handlePrevious,
                                     ),
-                                    const SizedBox(width: 4),
                                     _buildControlButton(
-                                      icon: _isPlaying ? Icons.pause : Icons.play_arrow,
+                                      icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                                       onTap: _handlePlayPause,
                                       isCenter: true,
                                     ),
-                                    const SizedBox(width: 4),
                                     _buildControlButton(
-                                      icon: Icons.skip_next,
+                                      icon: Icons.skip_next_rounded,
                                       onTap: _handleNext,
                                     ),
                                   ],
@@ -305,7 +313,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 HarmonyBottomNav(
@@ -322,11 +330,10 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
     );
   }
 
-  /// Прогресс-бар точь-в-точь как на второй фотке: проигранная часть — бирюзовая линия,
-  /// непроигранная — светлая серая, круг того же цвета движется при прослушивании.
+  /// Прогресс-бар: бирюзовая активная часть + серо-белая неактивная с круглым thumb.
   Widget _buildProgressBar() {
-    const double barHeight = 5;
-    const double thumbRadius = 8;
+    const double barHeight = 4;
+    const double thumbRadius = 7;
     final double progress = _progress.clamp(0.0, 1.0);
     const Color teal = Color(0xFF46E4E3);
     return LayoutBuilder(
@@ -342,7 +349,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
               height: barHeight,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.45),
+                color: Colors.white.withOpacity(0.55),
                 borderRadius: BorderRadius.circular(barHeight / 2),
               ),
             ),
@@ -366,11 +373,11 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                 decoration: BoxDecoration(
                   color: teal,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: Colors.white.withOpacity(0.95), width: 1.8),
                   boxShadow: [
                     BoxShadow(
-                      color: teal.withOpacity(0.5),
-                      blurRadius: 5,
+                      color: teal.withOpacity(0.45),
+                      blurRadius: 4,
                       spreadRadius: 0,
                     ),
                   ],
@@ -386,6 +393,13 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
   Widget _buildBackground() {
     final cover = _track.image;
     if (cover.isNotEmpty) {
+      if (cover.startsWith('http')) {
+        return Image.network(
+          cover,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _placeholderBackground(),
+        );
+      }
       return Image.asset(
         cover,
         fit: BoxFit.cover,
@@ -414,6 +428,15 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
   Widget _buildCoverThumbnail(double w, double h) {
     final cover = _track.image;
     if (cover.isNotEmpty) {
+      if (cover.startsWith('http')) {
+        return Image.network(
+          cover,
+          width: w,
+          height: h,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _defaultCover(w, h),
+        );
+      }
       return Image.asset(
         cover,
         width: w,
@@ -446,14 +469,14 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
     required VoidCallback onTap,
     bool isCenter = false,
   }) {
-    final size = isCenter ? 32.0 : 26.0;
+    final size = isCenter ? 36.0 : 24.0;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
           child: Icon(icon, size: size, color: Colors.white),
         ),
       ),

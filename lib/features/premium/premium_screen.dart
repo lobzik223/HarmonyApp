@@ -433,7 +433,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -455,22 +455,22 @@ class _PremiumScreenState extends State<PremiumScreen> {
               Text(
                 line1,
                 style: GoogleFonts.inter(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  height: 1.18,
                   color: const Color(0xFF202020),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     line2,
                     style: GoogleFonts.inter(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      height: 1.2,
+                      height: 1.18,
                       color: const Color(0xFF202020),
                     ),
                   ),
@@ -484,27 +484,46 @@ class _PremiumScreenState extends State<PremiumScreen> {
           Text(
             AppLocalizations.of(context)!.subscribeFrom199.toUpperCase(),
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w400,
               height: 1.2,
               color: const Color(0xFF202020),
             ),
           ),
-          const SizedBox(height: 28),
-          _buildSubscriptionCard(
-            title: AppLocalizations.of(context)!.monthPlan,
-            price: AppLocalizations.of(context)!.price265PerMonth,
-            showTryButton: true,
-            onBuy: () {},
-          ),
-          const SizedBox(height: 20),
-          _buildSubscriptionCard(
-            title: AppLocalizations.of(context)!.yearPlan,
-            price: AppLocalizations.of(context)!.price199PerMonth,
-            priceYear: AppLocalizations.of(context)!.price2390PerYear,
-            showDiscount: true,
-            discountPercent: 20,
-            onBuy: () {},
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF2AA9FF),
+                  Color(0xFF3AE3D8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              children: [
+                _buildSubscriptionCard(
+                  title: AppLocalizations.of(context)!.monthPlan,
+                  price: AppLocalizations.of(context)!.price265PerMonth,
+                  showTryButton: true,
+                  onBuy: () {},
+                ),
+                const SizedBox(height: 12),
+                _buildSubscriptionCard(
+                  title: AppLocalizations.of(context)!.yearPlan,
+                  price: AppLocalizations.of(context)!.price199PerMonth,
+                  priceYear: AppLocalizations.of(context)!.price2390PerYear,
+                  showDiscount: true,
+                  discountPercent: 20,
+                  onBuy: () {},
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -520,24 +539,30 @@ class _PremiumScreenState extends State<PremiumScreen> {
     int? discountPercent,
     required VoidCallback onBuy,
   }) {
-    final darkGrey = const Color(0xFF37474F);
-    final lightGrey = const Color(0xFF78909C);
+    final textMain = Colors.white;
+    final textSecondary = Colors.white.withOpacity(0.92);
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Белая карточка с скруглёнными углами
+        // Градиентная карточка тарифа
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: showTryButton
+                  ? const [Color(0xFF1E8FEF), Color(0xFF3AE3D8)]
+                  : const [Color(0xFF1A53EA), Color(0xFF2CC4E7)],
+            ),
+            borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.10),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -552,28 +577,28 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     Text(
                       title,
                       style: GoogleFonts.inter(
-                        fontSize: 20,
+                        fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: darkGrey,
+                        color: textMain,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       price,
                       style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: darkGrey,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: textMain,
                       ),
                     ),
                     if (priceYear != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
                         priceYear,
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: lightGrey,
+                          fontWeight: FontWeight.w700,
+                          color: textSecondary,
                         ),
                       ),
                     ],
@@ -584,18 +609,17 @@ class _PremiumScreenState extends State<PremiumScreen> {
               GestureDetector(
                 onTap: onBuy,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 11),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     AppLocalizations.of(context)!.buy,
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: darkGrey,
+                      color: const Color(0xFF202020),
                     ),
                   ),
                 ),
@@ -606,48 +630,40 @@ class _PremiumScreenState extends State<PremiumScreen> {
         // Бейдж сверху по середине (половина в карточке, половина над ней)
         if (showTryButton)
           Positioned(
-            top: -12,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF81D4FA).withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  AppLocalizations.of(context)!.tryButton,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    letterSpacing: 0.3,
-                  ),
+            top: -8,
+            left: 122,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.34),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.tryButton,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
         if (showDiscount && discountPercent != null)
           Positioned(
-            top: -12,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFB300),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  AppLocalizations.of(context)!.discountPercent(discountPercent!),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.3,
-                  ),
+            top: -8,
+            left: 118,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFCB63),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.discountPercent(discountPercent!),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF3B3B3B),
                 ),
               ),
             ),

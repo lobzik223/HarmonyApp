@@ -21,6 +21,7 @@ import 'features/player/open_player_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'shared/models/meditation_track.dart';
 import 'shared/widgets/harmony_bottom_nav.dart';
+import 'shared/widgets/mini_player.dart';
 
 /// Модель карточки для главного экрана (раздел «О силе мышления» и др.)
 class HomeCard {
@@ -199,10 +200,15 @@ class _HomeScreenState extends State<HomeScreen> {
   // Данные карточек
   HomeCard? _featuredCard;
   List<HomeCard> _recommendedCards = [];
-  List<HomeCard> _popularTrackCards = [];
+  List<MeditationTrack> _popularTracks = [];
   List<CourseCard> _courses = [];
   /// Секции главной (Гармония, Расслабление, Осознанность, Энергия) с треками.
   List<Map<String, dynamic>> _homeSections = [];
+  String? _activeTrackId;
+  List<MeditationTrack> _activeTrackContext = [];
+  bool _isPlaying = false;
+  double _progress = 0.0;
+  String _currentTime = '0:00';
 
   Timer? _refreshTimer;
 
@@ -239,22 +245,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _recommendedCards = (home['recommended'] as List<dynamic>?)
           ?.map((e) => HomeCard.fromApiArticle(e as Map<String, dynamic>))
           .toList() ?? [];
-      _popularTrackCards = (home['popularTracks'] as List<dynamic>?)
+      _popularTracks = (home['popularTracks'] as List<dynamic>?)
           ?.map((e) {
             final track = e as Map<String, dynamic>;
-            final title = track['title'] as String? ?? '';
-            final subtitle = track['descriptionShort'] as String?;
-            final image = ContentApi.mediaUrl(track['coverUrl'] as String?);
-            final listens = (track['listenCount'] as int?) ?? 0;
-            return HomeCard(
-              id: track['id'] as String? ?? '',
-              image: image,
-              title: title,
-              subtitle: subtitle,
-              type: '$listens прослушиваний',
-              isLocked: track['isPremium'] as bool? ?? false,
-              descriptionFull: subtitle,
-            );
+            final section = track['section'] as Map<String, dynamic>?;
+            final category = section?['slug'] as String? ?? 'popular';
+            return MeditationTrack.fromApiJson(track, category: category);
           })
           .toList() ?? [];
       _courses = (home['courses'] as List<dynamic>?)
@@ -280,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _featuredCard = null;
           _recommendedCards = [];
-          _popularTrackCards = [];
+          _popularTracks = [];
           _courses = [];
           _homeSections = [];
         });
@@ -357,8 +353,72 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _setActiveTrack(MeditationTrack track, List<MeditationTrack> contextTracks) {
+    setState(() {
+      _activeTrackContext = contextTracks;
+      if (_activeTrackId == track.id) {
+        _isPlaying = !_isPlaying;
+      } else {
+        _activeTrackId = track.id;
+        _isPlaying = true;
+        _progress = 0.0;
+        _currentTime = '0:00';
+      }
+    });
+    ContentApi.registerTrackListen(track.id).catchError((_) {});
+  }
+
+  String _formatCardSubtitle(MeditationTrack track) {
+    final level = track.level.trim().isEmpty ? 'A' : track.level.trim();
+    return 'i-медитация • Уровень $level';
+  }
+
+  void _openActiveTrackPlayer() {
+    if (_activeTrackId == null || _activeTrackContext.isEmpty) return;
+    final idx = _activeTrackContext.indexWhere((t) => t.id == _activeTrackId);
+    if (idx < 0) return;
+    final active = _activeTrackContext[idx];
+    Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => OpenPlayerScreen(
+          track: active,
+          tracks: _activeTrackContext,
+          initialIndex: idx,
+          isPlaying: _isPlaying,
+          progress: _progress,
+          currentTime: _currentTime,
+          totalTime: MeditationTrack.formatDuration(active.durationSeconds),
+          onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+          onPrevious: () {
+            if (idx > 0) {
+              setState(() {
+                _activeTrackId = _activeTrackContext[idx - 1].id;
+                _isPlaying = true;
+                _progress = 0.0;
+              });
+            }
+          },
+          onNext: () {
+            if (idx < _activeTrackContext.length - 1) {
+              setState(() {
+                _activeTrackId = _activeTrackContext[idx + 1].id;
+                _isPlaying = true;
+                _progress = 0.0;
+              });
+            }
+          },
+        ),
+      ),
+    ).then((newActiveId) {
+      if (newActiveId != null && mounted) {
+        setState(() => _activeTrackId = newActiveId);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final contentBottom = _activeTrackId != null ? 160.0 : 100.0;
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
       body: Stack(
@@ -471,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
             top: 130,
             left: 0,
             right: 0,
-            bottom: 100,
+            bottom: contentBottom,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -499,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildFeaturedCard(_featuredCard!),
                     const SizedBox(height: 32),
                   ],
-                  if (_popularTrackCards.isNotEmpty) ...[
+                  if (_popularTracks.isNotEmpty) ...[
                     Text(
                       AppLocalizations.of(context)!.popularFromHarmony,
                       style: GoogleFonts.inter(
@@ -536,6 +596,67 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
+          if (_activeTrackId != null)
+            MiniPlayer(
+              track: _activeTrackContext.firstWhere(
+                (t) => t.id == _activeTrackId,
+                orElse: () => _activeTrackContext.isNotEmpty ? _activeTrackContext.first : MeditationTrack(
+                  id: '',
+                  title: '',
+                  description: '',
+                  level: '',
+                  image: '',
+                  video: '',
+                  type: '',
+                  category: '',
+                  isPremium: false,
+                  isPlaying: false,
+                ),
+              ),
+              isPlaying: _isPlaying,
+              progress: _progress,
+              currentTime: _currentTime,
+              totalTime: MeditationTrack.formatDuration(
+                _activeTrackContext.firstWhere(
+                  (t) => t.id == _activeTrackId,
+                  orElse: () => _activeTrackContext.isNotEmpty ? _activeTrackContext.first : MeditationTrack(
+                    id: '',
+                    title: '',
+                    description: '',
+                    level: '',
+                    image: '',
+                    video: '',
+                    type: '',
+                    category: '',
+                    isPremium: false,
+                    isPlaying: false,
+                  ),
+                ).durationSeconds,
+              ),
+              onTap: _openActiveTrackPlayer,
+              onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+              onPrevious: () {
+                final idx = _activeTrackContext.indexWhere((t) => t.id == _activeTrackId);
+                if (idx > 0) {
+                  setState(() {
+                    _activeTrackId = _activeTrackContext[idx - 1].id;
+                    _isPlaying = true;
+                    _progress = 0.0;
+                  });
+                }
+              },
+              onNext: () {
+                final idx = _activeTrackContext.indexWhere((t) => t.id == _activeTrackId);
+                if (idx >= 0 && idx < _activeTrackContext.length - 1) {
+                  setState(() {
+                    _activeTrackId = _activeTrackContext[idx + 1].id;
+                    _isPlaying = true;
+                    _progress = 0.0;
+                  });
+                }
+              },
+            ),
           
           // Нижнее меню поверх изображения
           Positioned(
@@ -814,15 +935,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-  // Популярные треки (до 10) — карточки без цветных линий поверх фото.
+  // Популярные треки (до 10) — компактные карточки как в разделах медитаций.
   Widget _buildPopularTracksCards() {
-    return Column(
-      children: _popularTrackCards.map((card) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildSmallCard(card),
-        );
-      }).toList(),
+    return SizedBox(
+      height: 240,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _popularTracks.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final track = _popularTracks[index];
+          return _buildAudioTrackCard(
+            track,
+            subtitle: _formatCardSubtitle(track),
+            onTap: () => _setActiveTrack(track, _popularTracks),
+          );
+        },
+      ),
     );
   }
 
@@ -856,7 +985,7 @@ class _HomeScreenState extends State<HomeScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final track = tracks[index];
-                return _buildHomeSectionTrackCard(track, tracks, index);
+                return _buildHomeSectionTrackCard(track, tracks);
               },
             ),
           ),
@@ -865,82 +994,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHomeSectionTrackCard(MeditationTrack track, List<MeditationTrack> tracks, int index) {
-    final durationStr = track.durationSeconds != null
-        ? '${(track.durationSeconds! / 60).round()} мин'
-        : '';
-    return GestureDetector(
-      onTap: () {
-        ContentApi.registerTrackListen(track.id).catchError((_) {});
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => _HomeSectionPlayerScreen(
-              tracks: tracks,
-              initialIndex: index,
-            ),
-          ),
-        );
-      },
-      child: SizedBox(
-        width: 160,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFF1E2768),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 140,
-                  width: double.infinity,
-                  child: Image.network(
-                    track.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey[800],
-                      child: const Center(
-                        child: Icon(Icons.music_note, color: Colors.white54, size: 40),
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        track.title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (durationStr.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          durationStr,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  Widget _buildHomeSectionTrackCard(MeditationTrack track, List<MeditationTrack> tracks) {
+    return _buildAudioTrackCard(
+      track,
+      subtitle: _formatCardSubtitle(track),
+      onTap: () => _setActiveTrack(track, tracks),
     );
   }
 
@@ -1018,129 +1076,167 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-  // Маленькая карточка (популярный трек): текст снизу, без цветных линий на фото.
-  Widget _buildSmallCard(HomeCard card) {
+  Widget _buildAudioTrackCard(
+    MeditationTrack track, {
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final isActive = _activeTrackId == track.id;
     return GestureDetector(
-      onTap: () {
-        // Можно добавить навигацию на детальную страницу
-        print('Нажата карточка: ${card.title}');
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: const Color(0xFF1E2768),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 150,
-                width: double.infinity,
-                child: Image.network(
-                  card.image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey[800],
-                    child: const Center(
-                      child: Icon(Icons.image, color: Colors.white54, size: 32),
+      onTap: onTap,
+      child: SizedBox(
+        width: 150,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 145,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      track.image,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.music_note, color: Colors.black38, size: 40),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      card.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                  if (track.isPremium)
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 3.5, sigmaY: 3.5),
+                          child: Container(
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
                         color: Colors.white,
+                        shape: BoxShape.circle,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF202020)),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      card.type,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white70,
+                  ),
+                  if (track.isPremium)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 62,
+                      child: Center(child: _buildPremiumTrackBadge()),
+                    )
+                  else
+                    Center(
+                      child: ClipOval(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.18),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              (isActive && _isPlaying) ? Icons.pause : Icons.play_arrow,
+                              size: 22,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              track.title,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF202020),
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF637381),
+                height: 1.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-/// Плеер для треков из секций главной (Гармония, Расслабление и т.д.): обложка, воспроизведение, переключение треков.
-class _HomeSectionPlayerScreen extends StatefulWidget {
-  const _HomeSectionPlayerScreen({
-    required this.tracks,
-    required this.initialIndex,
-  });
-  final List<MeditationTrack> tracks;
-  final int initialIndex;
-
-  @override
-  State<_HomeSectionPlayerScreen> createState() => _HomeSectionPlayerScreenState();
-}
-
-class _HomeSectionPlayerScreenState extends State<_HomeSectionPlayerScreen> {
-  late int _currentIndex;
-  bool _isPlaying = false;
-  double _progress = 0.0;
-  String _currentTime = '0:00';
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, widget.tracks.length - 1);
-  }
-
-  MeditationTrack get _track => widget.tracks[_currentIndex];
-  String get _totalTime => MeditationTrack.formatDuration(_track.durationSeconds);
-
-  @override
-  Widget build(BuildContext context) {
-    return OpenPlayerScreen(
-      track: _track,
-      tracks: widget.tracks,
-      initialIndex: _currentIndex,
-      isPlaying: _isPlaying,
-      progress: _progress,
-      currentTime: _currentTime,
-      totalTime: _totalTime,
-      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
-      onPrevious: () {
-        if (_currentIndex > 0) {
-          setState(() {
-            _currentIndex--;
-            _progress = 0.0;
-            _currentTime = '0:00';
-          });
-        }
-      },
-      onNext: () {
-        if (_currentIndex < widget.tracks.length - 1) {
-          setState(() {
-            _currentIndex++;
-            _progress = 0.0;
-            _currentTime = '0:00';
-          });
-        }
-      },
+  Widget _buildPremiumTrackBadge() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: const BoxDecoration(
+            color: Color(0xFF4DB2EA),
+            shape: BoxShape.circle,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              child: Image.asset(
+                'assets/icons/harmonyicon.png',
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: -2),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF46AEE8), Color(0xFF46E4E3)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            'PREMIUM',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
