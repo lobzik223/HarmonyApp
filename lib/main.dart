@@ -851,7 +851,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          noAnimationRoute(HomeCardDetailScreen(card: card)),
+          slideUpRoute(HomeCardDetailScreen(card: card)),
         );
       },
       child: SizedBox(
@@ -1262,107 +1262,198 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Экран детали карточки (обложка, название, полное описание) — как в примере с курсом
-class HomeCardDetailScreen extends StatelessWidget {
+/// Градиент фона как на экране «Сон»
+const _sleepStyleGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    Color(0xFF3E43E9),
+    Color(0xFF5565F2),
+    Color(0xFF9AD3FF),
+    Color(0xFF39D8D0),
+  ],
+  stops: [0.0, 0.28, 0.55, 1.0],
+);
+
+/// Экран детали карточки (обложка, название, полное описание) — фон нижней части как у Сна, без белых пропусков
+class HomeCardDetailScreen extends StatefulWidget {
   const HomeCardDetailScreen({super.key, required this.card});
   final HomeCard card;
 
   @override
+  State<HomeCardDetailScreen> createState() => _HomeCardDetailScreenState();
+}
+
+class _HomeCardDetailScreenState extends State<HomeCardDetailScreen> {
+  @override
   Widget build(BuildContext context) {
+    final card = widget.card;
+    final contentChildren = <Widget>[
+      Text(
+        card.title,
+        style: GoogleFonts.inter(
+          fontSize: 26,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+      ),
+      if (card.subtitle != null && card.subtitle!.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        Text(
+          card.subtitle!,
+          style: GoogleFonts.inter(
+            fontSize: 17,
+            fontWeight: FontWeight.w400,
+            color: Colors.white70,
+          ),
+        ),
+      ],
+      const SizedBox(height: 28),
+      if (card.descriptionFull != null && card.descriptionFull!.isNotEmpty)
+        Text(
+          card.descriptionFull!,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            height: 1.5,
+            fontWeight: FontWeight.w400,
+            color: Colors.white,
+          ),
+        )
+      else if (card.subtitle != null && card.subtitle!.isNotEmpty)
+        Text(
+          card.subtitle!,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            height: 1.5,
+            fontWeight: FontWeight.w400,
+            color: Colors.white,
+          ),
+        ),
+    ];
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.4,
-                width: double.infinity,
-                child: Image.network(
-                  card.image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFF2C2F4D),
-                    child: const Icon(Icons.image, color: Colors.white54, size: 64),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(gradient: _sleepStyleGradient),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.46,
+                  width: double.infinity,
+                  child: GestureDetector(
+                    onVerticalDragEnd: (details) {
+                      if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: Image.network(
+                        card.image,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          color: const Color(0xFF2C2F4D),
+                          child: const Icon(Icons.image, color: Colors.white54, size: 64),
+                        ),
+                      ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2C2F4D),
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          card.title,
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        gradient: _sleepStyleGradient,
+                      ),
+                      child: NotificationListener<OverscrollNotification>(
+                      onNotification: (notification) {
+                        if (notification.overscroll < -60) {
+                          Navigator.of(context).pop();
+                          return true;
+                        }
+                        return false;
+                      },
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
                         ),
-                        if (card.subtitle != null && card.subtitle!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            card.subtitle!,
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 24),
-                        if (card.descriptionFull != null && card.descriptionFull!.isNotEmpty) ...[
-                          Text(
-                            card.descriptionFull!,
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              height: 1.5,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ] else if (card.subtitle != null && card.subtitle!.isNotEmpty)
-                          Text(
-                            card.subtitle!,
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              height: 1.5,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white,
-                            ),
-                          ),
-                      ],
+                        padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: contentChildren,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: MediaQuery.of(context).size.height * 0.46 - 14,
+              child: IgnorePointer(
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.08),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, top: 8),
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFB300).withOpacity(0.95),
-                    shape: BoxShape.circle,
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 12),
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: ClipRRect(
+borderRadius: BorderRadius.circular(22),
+                        child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.35),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: const Icon(Icons.chevron_left, color: Colors.white, size: 26),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

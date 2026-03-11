@@ -36,7 +36,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeTitle => 'Главная';
 
   @override
-  String get powerOfThoughts => 'Сила мыслей';
+  String get powerOfThoughts => 'О силе мышления';
 
   @override
   String get popularFromHarmony => 'Популярное от Harmony';

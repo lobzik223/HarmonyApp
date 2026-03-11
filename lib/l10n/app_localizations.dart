@@ -155,7 +155,7 @@ abstract class AppLocalizations {
   /// No description provided for @powerOfThoughts.
   ///
   /// In en, this message translates to:
-  /// **'Power of Thoughts'**
+  /// **'About the power of thinking'**
   String get powerOfThoughts;
 
   /// No description provided for @popularFromHarmony.

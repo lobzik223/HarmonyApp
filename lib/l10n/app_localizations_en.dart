@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTitle => 'Home';
 
   @override
-  String get powerOfThoughts => 'Power of Thoughts';
+  String get powerOfThoughts => 'About the power of thinking';
 
   @override
   String get popularFromHarmony => 'Popular from Harmony';
