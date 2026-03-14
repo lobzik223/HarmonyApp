@@ -35,6 +35,8 @@ class HomeCard {
   final String? views;
   final bool isLocked;
   final String? descriptionFull;
+  /// URL аудио/видео для воспроизведения (курсы, треки).
+  final String? audioUrl;
 
   HomeCard({
     required this.id,
@@ -47,6 +49,7 @@ class HomeCard {
     this.views,
     this.isLocked = false,
     this.descriptionFull,
+    this.audioUrl,
   });
 
   factory HomeCard.fromJson(Map<String, dynamic> json) {
@@ -61,6 +64,7 @@ class HomeCard {
       views: json['views'] as String?,
       isLocked: json['isLocked'] as bool? ?? false,
       descriptionFull: json['descriptionFull'] as String?,
+      audioUrl: json['audioUrl'] as String?,
     );
   }
 
@@ -121,6 +125,7 @@ class CourseCard {
         .map((e) => e as Map<String, dynamic>)
         .map((e) {
           final t = e['track'] as Map<String, dynamic>? ?? {};
+          final audioUrl = ContentApi.mediaUrl(t['audioUrl'] as String?);
           return HomeCard(
             id: t['id'] as String? ?? '',
             image: ContentApi.mediaUrl(t['coverUrl'] as String?),
@@ -129,6 +134,7 @@ class CourseCard {
             type: 'TRACK',
             duration: null,
             isLocked: t['isPremium'] as bool? ?? false,
+            audioUrl: audioUrl.isNotEmpty ? audioUrl : null,
           );
         })
         .toList();
@@ -1023,7 +1029,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: GestureDetector(
             onTap: () {
               Navigator.of(context).push(
-                noAnimationRoute(CourseDetailScreen(course: course)),
+                noAnimationRoute(CourseDetailScreen(
+                  course: course,
+                  onTrackTap: _setActiveTrack,
+                )),
               );
             },
             child: ClipRRect(
@@ -1460,9 +1469,26 @@ borderRadius: BorderRadius.circular(22),
   }
 }
 
+MeditationTrack _homeCardToMeditationTrack(HomeCard card) {
+  return MeditationTrack(
+    id: card.id,
+    title: card.title,
+    description: card.subtitle ?? '',
+    level: 'A',
+    image: card.image,
+    video: card.audioUrl ?? '',
+    type: 'meditation',
+    category: 'course',
+    isPremium: card.isLocked,
+    isPlaying: false,
+    durationSeconds: null,
+  );
+}
+
 class CourseDetailScreen extends StatelessWidget {
-  const CourseDetailScreen({super.key, required this.course});
+  const CourseDetailScreen({super.key, required this.course, this.onTrackTap});
   final CourseCard course;
+  final void Function(MeditationTrack track, List<MeditationTrack> contextTracks)? onTrackTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1525,56 +1551,70 @@ class CourseDetailScreen extends StatelessWidget {
                       ...course.tracks.asMap().entries.map((entry) {
                         final idx = entry.key + 1;
                         final track = entry.value;
+                        final canPlay = track.audioUrl != null && track.audioUrl!.isNotEmpty;
+                        final mt = _homeCardToMeditationTrack(track);
+                        final mtList = course.tracks
+                            .where((t) => t.audioUrl != null && t.audioUrl!.isNotEmpty)
+                            .map(_homeCardToMeditationTrack)
+                            .toList();
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.06),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF5B5CE6),
-                                    borderRadius: BorderRadius.circular(12),
+                          child: GestureDetector(
+                            onTap: canPlay && onTrackTap != null
+                                ? () => onTrackTap!(mt, mtList)
+                                : null,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.06),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF5B5CE6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '$idx',
+                                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                                    ),
                                   ),
-                                  child: Text(
-                                    '$idx',
-                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        track.title,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      if (track.subtitle != null && track.subtitle!.isNotEmpty)
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
                                         Text(
-                                          track.subtitle!,
+                                          track.title,
                                           style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w400,
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                    ],
+                                        if (track.subtitle != null && track.subtitle!.isNotEmpty)
+                                          Text(
+                                            track.subtitle!,
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                if (track.isLocked) const Icon(Icons.lock_outline, color: Colors.white54),
-                              ],
+                                  if (track.isLocked)
+                                    const Icon(Icons.lock_outline, color: Colors.white54)
+                                  else if (canPlay)
+                                    const Icon(Icons.play_circle_outline, color: Colors.white70, size: 28),
+                                ],
+                              ),
                             ),
                           ),
                         );
