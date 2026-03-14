@@ -15,6 +15,7 @@ class HarmonyBottomNav extends StatelessWidget {
     this.highlightHomeIdle = false,
     this.leadingEdgeCutoutTab,
     this.glassStyle = false,
+    this.iconsBlack = false,
   });
 
   final HarmonyTab activeTab;
@@ -24,6 +25,8 @@ class HarmonyBottomNav extends StatelessWidget {
   final HarmonyTab? leadingEdgeCutoutTab;
   /// Когда true — прозрачное «стеклянное» меню (для открытого полноэкранного плеера), иконка плеера подсвечена.
   final bool glassStyle;
+  /// Когда true — иконки в кругах чёрные (когда виден мини-плеер).
+  final bool iconsBlack;
 
   static const double _barHeight = 52.0;
   static const double _backgroundOffset = 2.0;
@@ -106,6 +109,7 @@ class HarmonyBottomNav extends StatelessWidget {
                         onTap: onTabSelected,
                         highlightHomeIdle: highlightHomeIdle,
                         glowWhenPlayerActive: glassStyle && tab == HarmonyTab.player && tab == activeTab,
+                        iconsBlack: iconsBlack,
                       ),
                     )
                     .toList(),
@@ -125,6 +129,7 @@ class _HarmonyNavItem extends StatelessWidget {
     required this.onTap,
     required this.highlightHomeIdle,
     this.glowWhenPlayerActive = false,
+    this.iconsBlack = false,
   });
 
   final HarmonyTab tab;
@@ -132,6 +137,7 @@ class _HarmonyNavItem extends StatelessWidget {
   final ValueChanged<HarmonyTab>? onTap;
   final bool highlightHomeIdle;
   final bool glowWhenPlayerActive;
+  final bool iconsBlack;
 
   static const _iconPaths = {
     HarmonyTab.meditation: 'assets/icons/profileicon.png',
@@ -204,19 +210,32 @@ class _HarmonyNavItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(badgeSize / 2),
                     ),
             ),
-            Image.asset(
-              _iconPaths[tab]!,
-              width: iconSize,
-              height: iconSize,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.circle,
-                  size: iconSize,
-                  color: Colors.white.withOpacity(0.8),
-                );
-              },
-            ),
+            (iconsBlack && tab != HarmonyTab.home)
+                ? ColorFiltered(
+                    colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                    child: Image.asset(
+                      _iconPaths[tab]!,
+                      width: iconSize,
+                      height: iconSize,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.circle, size: iconSize, color: Colors.black);
+                      },
+                    ),
+                  )
+                : Image.asset(
+                    _iconPaths[tab]!,
+                    width: iconSize,
+                    height: iconSize,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.circle,
+                        size: iconSize,
+                        color: Colors.white.withOpacity(0.8),
+                      );
+                    },
+                  ),
           ],
         ),
       ),

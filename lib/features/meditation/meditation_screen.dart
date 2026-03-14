@@ -512,6 +512,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
             child: HarmonyBottomNav(
               activeTab: HarmonyTab.meditation,
               onTabSelected: _handleBottomNavTap,
+              iconsBlack: _activeTrackId != null,
             ),
           ),
         ],
@@ -674,40 +675,40 @@ class _MeditationScreenState extends State<MeditationScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 34,
-          height: 34,
+          width: 26,
+          height: 26,
           decoration: const BoxDecoration(
             color: Color(0xFF4DB2EA),
             shape: BoxShape.circle,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(5),
             child: ColorFiltered(
               colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
               child: Image.asset(
                 'assets/icons/harmonyicon.png',
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+                errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white, size: 12),
               ),
             ),
           ),
         ),
         const SizedBox(width: -2),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF46AEE8), Color(0xFF46E4E3)],
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Text(
             AppLocalizations.of(context)!.premiumBadge,
             style: GoogleFonts.inter(
-              fontSize: 16,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
               color: Colors.white,
-              letterSpacing: 0.4,
+              letterSpacing: 0.3,
             ),
           ),
         ),

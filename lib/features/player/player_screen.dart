@@ -283,6 +283,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               activeTab: HarmonyTab.player,
               onTabSelected: _handleBottomNavTap,
               leadingEdgeCutoutTab: HarmonyTab.player,
+              iconsBlack: _activeTrackId != null,
             ),
           ),
         ],

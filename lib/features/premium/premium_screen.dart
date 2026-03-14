@@ -374,32 +374,30 @@ class _PremiumScreenState extends State<PremiumScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Круг побольше, иконка логотипа внутри — меньше
         Container(
-          width: 32,
-          height: 32,
+          width: 24,
+          height: 24,
           decoration: const BoxDecoration(
             color: Color(0xFF5BB8E8),
             shape: BoxShape.circle,
           ),
           child: ClipOval(
             child: Padding(
-              padding: const EdgeInsets.all(7),
+              padding: const EdgeInsets.all(4),
               child: ColorFiltered(
                 colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 child: Image.asset(
                   'assets/icons/harmonyicon.png',
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 12),
+                  errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 10),
                 ),
               ),
             ),
           ),
         ),
         const SizedBox(width: -2),
-        // Pill PREMIUM — крупнее
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
@@ -407,15 +405,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 Color(0xFF46E4E3),
               ],
             ),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             AppLocalizations.of(context)!.premiumBadge,
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
               color: Colors.white,
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             ),
           ),
         ),

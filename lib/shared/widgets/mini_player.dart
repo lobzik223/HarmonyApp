@@ -38,8 +38,9 @@ class MiniPlayer extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final double bottomPadding = bottomOffset - 28;
     return Positioned(
-      bottom: bottomOffset,
+      bottom: bottomOffset - 28,
       left: 0,
       right: 0,
       child: GestureDetector(
@@ -49,24 +50,25 @@ class MiniPlayer extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Основной контент плеера
+            // Основной контент плеера — белый фон растянут вниз до конца экрана
             Container(
-              width: double.infinity, // Максимальная ширина без margin
+              width: double.infinity,
+              padding: EdgeInsets.only(bottom: bottomPadding),
               decoration: BoxDecoration(
-              color: Colors.white, // Белый фон
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ), // Только верхние углы скруглены
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-              ],
-            ),
-            child: Column(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
             // Прогресс-бар сверху с ручкой
@@ -300,11 +302,11 @@ class MiniPlayer extends StatelessWidget {
             ),
           ],
         ),
-          ),
-          ],
-        ),
       ),
-    );
+    ],
+  ),
+  ),
+);
   }
 }
 
