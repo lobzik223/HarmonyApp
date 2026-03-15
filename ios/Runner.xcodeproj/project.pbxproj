@@ -198,6 +198,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				B4C133430B466EE07FB0EBD1 /* [CP] Embed Pods Frameworks */,
+				A1B2C3D4E5F6789012345678 /* Remove xattr for codesign */,
 			);
 			buildRules = (
 			);
@@ -283,7 +284,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
+			shellScript = "# Fix codesign: resource fork, Finder information, or similar detritus not allowed\nif [ -d \"${PROJECT_DIR}/build/ios/${CONFIGURATION}-iphoneos\" ]; then xattr -cr \"${PROJECT_DIR}/build/ios/${CONFIGURATION}-iphoneos\" 2>/dev/null || true; fi\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
 		3FAF151F3444569B846D6D8E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -359,6 +360,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A1B2C3D4E5F6789012345678 /* Remove xattr for codesign */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove xattr for codesign";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Fix: resource fork, Finder information, or similar detritus not allowed\nif [ -d \"${PROJECT_DIR}/build/ios/${CONFIGURATION}-iphoneos\" ]; then\n  xattr -cr \"${PROJECT_DIR}/build/ios/${CONFIGURATION}-iphoneos\" 2>/dev/null || true\nfi\nif [ -d \"${BUILT_PRODUCTS_DIR}\" ]; then\n  xattr -cr \"${BUILT_PRODUCTS_DIR}\" 2>/dev/null || true\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
