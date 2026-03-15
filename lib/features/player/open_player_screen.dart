@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
+import '../../core/audio/audio_service.dart';
 import '../../main.dart';
 import '../../shared/models/meditation_track.dart';
 import '../../shared/widgets/harmony_bottom_nav.dart';
@@ -45,11 +46,7 @@ class OpenPlayerScreen extends StatefulWidget {
 }
 
 class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
-  late bool _isPlaying;
-  late double _progress;
   late int _currentIndex;
-  late String _currentTime;
-  late String _totalTime;
 
   List<MeditationTrack> get _tracks => widget.tracks ?? [widget.track];
   MeditationTrack get _track => _tracks[_currentIndex.clamp(0, _tracks.length - 1)];
@@ -57,13 +54,9 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _isPlaying = widget.isPlaying;
-    _progress = widget.progress;
-    _currentTime = widget.currentTime;
     _currentIndex = widget.tracks != null
         ? widget.initialIndex.clamp(0, widget.tracks!.length - 1)
         : 0;
-    _totalTime = _resolveTotalTime();
     _registerOpenedTrack();
   }
 
@@ -80,18 +73,15 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
   }
 
   void _handlePlayPause() {
-    setState(() => _isPlaying = !_isPlaying);
+    AudioService.instance.togglePlayPause();
     widget.onPlayPause();
   }
 
   void _handlePrevious() {
     if (_tracks.length > 1 && _currentIndex > 0) {
-      setState(() {
-        _currentIndex = _currentIndex - 1;
-        _progress = 0.0;
-        _currentTime = '0:00';
-        _totalTime = _resolveTotalTime();
-      });
+      setState(() => _currentIndex = _currentIndex - 1);
+      final prev = _tracks[_currentIndex];
+      if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
       _registerOpenedTrack();
     }
     if (widget.tracks == null) widget.onPrevious();
@@ -99,12 +89,9 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
 
   void _handleNext() {
     if (_tracks.length > 1 && _currentIndex < _tracks.length - 1) {
-      setState(() {
-        _currentIndex = _currentIndex + 1;
-        _progress = 0.0;
-        _currentTime = '0:00';
-        _totalTime = _resolveTotalTime();
-      });
+      setState(() => _currentIndex = _currentIndex + 1);
+      final next = _tracks[_currentIndex];
+      if (next.video.isNotEmpty) AudioService.instance.play(next.video);
       _registerOpenedTrack();
     }
     if (widget.tracks == null) widget.onNext();
@@ -219,99 +206,111 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                           top: BorderSide(color: Colors.white.withOpacity(0.22), width: 1),
                         ),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 12, right: 12, top: 10),
-                            child: _buildProgressBar(),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 12, right: 12, top: 4),
-                            child: Row(
-                              children: [
-                                Text(
-                                  _currentTime,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white.withOpacity(0.86),
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  _totalTime,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white.withOpacity(0.86),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 8, 10, 14),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: _buildCoverThumbnail(52, 52),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _track.title.isEmpty ? AppLocalizations.of(context)!.trackTitlePlaceholder : _track.title,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                          height: 1.1,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        _track.description.isEmpty ? AppLocalizations.of(context)!.artistPlaceholder : _track.description,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.white.withOpacity(0.82),
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
+                      child: ListenableBuilder(
+                        listenable: AudioService.instance,
+                        builder: (context, _) {
+                          final svc = AudioService.instance;
+                          final progress = svc.progress.clamp(0.0, 1.0);
+                          final currentTime = svc.formattedPosition;
+                          final totalTime = svc.formattedDuration != '0:00'
+                              ? svc.formattedDuration
+                              : _resolveTotalTime();
+                          final isPlaying = svc.isPlaying;
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 12, right: 12, top: 10),
+                                child: _buildProgressBar(progress),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 12, right: 12, top: 4),
+                                child: Row(
                                   children: [
-                                    _buildControlButton(
-                                      icon: Icons.skip_previous_rounded,
-                                      onTap: _handlePrevious,
+                                    Text(
+                                      currentTime,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white.withOpacity(0.86),
+                                      ),
                                     ),
-                                    _buildControlButton(
-                                      icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                      onTap: _handlePlayPause,
-                                      isCenter: true,
-                                    ),
-                                    _buildControlButton(
-                                      icon: Icons.skip_next_rounded,
-                                      onTap: _handleNext,
+                                    const Spacer(),
+                                    Text(
+                                      totalTime,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white.withOpacity(0.86),
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 8, 10, 14),
+                                child: Row(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: _buildCoverThumbnail(52, 52),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _track.title.isEmpty ? AppLocalizations.of(context)!.trackTitlePlaceholder : _track.title,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                              height: 1.1,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _track.description.isEmpty ? AppLocalizations.of(context)!.artistPlaceholder : _track.description,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w400,
+                                              color: Colors.white.withOpacity(0.82),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _buildControlButton(
+                                          icon: Icons.skip_previous_rounded,
+                                          onTap: _handlePrevious,
+                                        ),
+                                        _buildControlButton(
+                                          icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                          onTap: _handlePlayPause,
+                                          isCenter: true,
+                                        ),
+                                        _buildControlButton(
+                                          icon: Icons.skip_next_rounded,
+                                          onTap: _handleNext,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -331,16 +330,22 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
   }
 
   /// Прогресс-бар: бирюзовая активная часть + серо-белая неактивная с круглым thumb.
-  Widget _buildProgressBar() {
+  Widget _buildProgressBar(double progress) {
     const double barHeight = 4;
     const double thumbRadius = 7;
-    final double progress = _progress.clamp(0.0, 1.0);
+    final double p = progress.clamp(0.0, 1.0);
     const Color teal = Color(0xFF46E4E3);
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final thumbLeft = (width * progress).clamp(thumbRadius, width - thumbRadius);
-        return Stack(
+        final thumbLeft = (width * p).clamp(thumbRadius, width - thumbRadius);
+        return GestureDetector(
+          onTapDown: (d) {
+            final x = d.localPosition.dx;
+            final newProgress = (x / width).clamp(0.0, 1.0);
+            AudioService.instance.seekTo(newProgress);
+          },
+          child: Stack(
           alignment: Alignment.centerLeft,
           clipBehavior: Clip.none,
           children: [
@@ -355,7 +360,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
             ),
             // Проигранная часть — бирюзовая, как круг в баре
             FractionallySizedBox(
-              widthFactor: progress,
+              widthFactor: p,
               child: Container(
                 height: barHeight,
                 decoration: BoxDecoration(
@@ -385,6 +390,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
               ),
             ),
           ],
+        ),
         );
       },
     );

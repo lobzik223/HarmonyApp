@@ -62,6 +62,9 @@ dependencies:
   # Google Fonts (6.3.2+ исправляет FontWeight/const с новым Flutter)
   google_fonts: ^6.3.2
 
+  # Воспроизведение аудио
+  just_audio: ^0.9.40
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

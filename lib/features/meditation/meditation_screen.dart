@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
+import '../../core/audio/audio_service.dart';
 import '../../shared/models/meditation_track.dart';
 import '../../shared/widgets/mini_player.dart';
 import '../../shared/widgets/harmony_bottom_nav.dart';
@@ -13,8 +14,7 @@ import '../tasks/tasks_screen.dart';
 import '../player/player_screen.dart';
 import '../player/open_player_screen.dart';
 
-/// Экран "Медитации"
-/// Фон с градиентами точно как в SVG
+/// Экран "Медитации" — разделы и карточки с бэкенда.
 class MeditationScreen extends StatefulWidget {
   const MeditationScreen({super.key});
 
@@ -23,14 +23,12 @@ class MeditationScreen extends StatefulWidget {
 }
 
 class _MeditationScreenState extends State<MeditationScreen> {
-  List<MeditationTrack> _relaxationTracks = [];
-  List<MeditationTrack> _inspirationTracks = [];
-  List<MeditationTrack> _loveTracks = [];
-  List<MeditationTrack> _allTracks = []; // Все треки для поиска
-  String? _activeTrackId; // ID активного трека
-  bool _isPlaying = false; // Состояние воспроизведения
-  double _progress = 0.0; // Прогресс воспроизведения (0.0 - 1.0)
-  String _currentTime = '10:56'; // Текущее время (заглушка)
+  List<SectionWithTracks> _sections = [];
+  List<MeditationTrack> _allTracks = [];
+  String? _activeTrackId;
+  bool _isPlaying = false;
+  double _progress = 0.0;
+  String _currentTime = '0:00';
 
   @override
   void initState() {
@@ -40,15 +38,11 @@ class _MeditationScreenState extends State<MeditationScreen> {
 
   Future<void> _loadTracks() async {
     try {
-      final allTracks = await ContentApi.getMeditationTracks();
-      final relaxation = allTracks.where((track) => track.category == 'relaxation').toList();
-      final inspiration = allTracks.where((track) => track.category == 'inspiration').toList();
-      final love = allTracks.where((track) => track.category == 'love').toList();
+      final sections = await ContentApi.getSectionsWithTracks('MEDITATION');
+      final allTracks = sections.expand((s) => s.tracks).toList();
       if (mounted) {
         setState(() {
-          _relaxationTracks = relaxation;
-          _inspirationTracks = inspiration;
-          _loveTracks = love;
+          _sections = sections;
           _allTracks = allTracks;
           _activeTrackId = null;
           _isPlaying = false;
@@ -57,9 +51,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _relaxationTracks = [];
-          _inspirationTracks = [];
-          _loveTracks = [];
+          _sections = [];
           _allTracks = [];
         });
       }
@@ -96,11 +88,10 @@ class _MeditationScreenState extends State<MeditationScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = (_activeTrackId != null ? 160.0 : 100.0);
-    
+
     return Scaffold(
       body: Stack(
         children: [
-          // Основной фон с диагональным градиентом
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -109,24 +100,21 @@ class _MeditationScreenState extends State<MeditationScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFFDDF3FF), // очень светлый голубой влево-сверху
-                  Color(0xFFCFEFFF), // мягкий голубой (35%)
-                  Color(0xFFBCEFEF), // нежная бирюза (70%)
-                  Color(0xFF7FE2DB), // более насыщенная бирюза вправо-внизу
+                  Color(0xFFDDF3FF),
+                  Color(0xFFCFEFFF),
+                  Color(0xFFBCEFEF),
+                  Color(0xFF7FE2DB),
                 ],
                 stops: [0.0, 0.35, 0.70, 1.0],
               ),
             ),
           ),
-          
-          // Едва заметное "сияние" сверху-справа
-          // cx="80%" cy="10%" r="45%" в SVG
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  center: const Alignment(0.6, -0.8), // 80% x, 10% y (от центра)
-                  radius: 0.45, // 45% от размера
+                  center: const Alignment(0.6, -0.8),
+                  radius: 0.45,
                   colors: [
                     const Color(0xFFFFFFFF).withOpacity(0.65),
                     const Color(0xFFFFFFFF).withOpacity(0.12),
@@ -137,15 +125,12 @@ class _MeditationScreenState extends State<MeditationScreen> {
               ),
             ),
           ),
-          
-          // Мягкая подсветка снизу-центра
-          // cx="55%" cy="85%" r="50%" в SVG
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  center: const Alignment(0.1, 0.7), // 55% x, 85% y (от центра)
-                  radius: 0.5, // 50% от размера
+                  center: const Alignment(0.1, 0.7),
+                  radius: 0.5,
                   colors: [
                     const Color(0xFFA9FFF7).withOpacity(0.35),
                     const Color(0xFFA9FFF7).withOpacity(0.08),
@@ -156,19 +141,16 @@ class _MeditationScreenState extends State<MeditationScreen> {
               ),
             ),
           ),
-
-          // Скроллируемый контент
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Padding(
               padding: EdgeInsets.only(
                 top: 62,
-                bottom: bottomPadding + 20, // Отступ снизу
+                bottom: bottomPadding + 20,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Заголовок "МЕДИТАЦИИ"
                   Center(
                     child: Text(
                       AppLocalizations.of(context)!.meditationsTitle,
@@ -176,335 +158,204 @@ class _MeditationScreenState extends State<MeditationScreen> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w400,
-                        height: 1.0, // 100%
-                        letterSpacing: 0.4, // 2% от 20px
-                        color: Color(0xFF202020), // rgba(32, 32, 32, 1)
+                        height: 1.0,
+                        letterSpacing: 0.4,
+                        color: Color(0xFF202020),
                         decoration: TextDecoration.none,
                       ),
                     ),
                   ),
-                  
                   const SizedBox(height: 48),
-                  
-                  // Раздел "ДЛЯ ОТДЫХА"
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.forRelaxation,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.0,
-                            letterSpacing: 0.28,
-                            color: const Color(0xFF202020),
-                            decoration: TextDecoration.none,
+                  for (final section in _sections) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            section.name.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              height: 1.0,
+                              letterSpacing: 0.28,
+                              color: const Color(0xFF202020),
+                              decoration: TextDecoration.none,
+                            ),
                           ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.all,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                height: 1.0,
-                                letterSpacing: 0.28,
-                                color: const Color(0xFF202020),
-                                decoration: TextDecoration.none,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)!.all,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.0,
+                                  letterSpacing: 0.28,
+                                  color: const Color(0xFF202020),
+                                  decoration: TextDecoration.none,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                              color: Color(0xFF202020),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 15),
-                  
-                  // Карточки треков для раздела "ДЛЯ ОТДЫХА"
-                  if (_relaxationTracks.isNotEmpty)
-                    SizedBox(
-                      height: 220,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        itemCount: _relaxationTracks.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (_activeTrackId == _relaxationTracks[index].id) {
-                                  _isPlaying = !_isPlaying;
-                                } else {
-                                  _activeTrackId = _relaxationTracks[index].id;
-                                  _isPlaying = true;
-                                  _progress = 0.0;
-                                }
-                              });
-                            },
-                            child: _buildTrackCard(_relaxationTracks[index], isInspiration: false),
-                          );
-                        },
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 12,
+                                color: Color(0xFF202020),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Раздел "ДЛЯ ВДОХНОВЕНИЯ"
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.forInspiration,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.0,
-                            letterSpacing: 0.28,
-                            color: const Color(0xFF202020),
-                            decoration: TextDecoration.none,
-                          ),
+                    const SizedBox(height: 15),
+                    if (section.tracks.isNotEmpty)
+                      SizedBox(
+                        height: 220,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          itemCount: section.tracks.length,
+                          itemBuilder: (context, index) {
+                            final track = section.tracks[index];
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (_activeTrackId == track.id) {
+                                    _isPlaying = !_isPlaying;
+                                    AudioService.instance.togglePlayPause();
+                                  } else {
+                                    _activeTrackId = track.id;
+                                    _isPlaying = true;
+                                    _progress = 0.0;
+                                    if (track.video.isNotEmpty) {
+                                      AudioService.instance.play(track.video);
+                                    }
+                                  }
+                                });
+                              },
+                              child: _buildTrackCard(track),
+                            );
+                          },
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.all,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                height: 1.0,
-                                letterSpacing: 0.28,
-                                color: const Color(0xFF202020),
-                                decoration: TextDecoration.none,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                              color: Color(0xFF202020),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 15),
-                  
-                  // Карточки треков для раздела "ДЛЯ ВДОХНОВЕНИЯ"
-                  if (_inspirationTracks.isNotEmpty)
-                    SizedBox(
-                      height: 220,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        itemCount: _inspirationTracks.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (_activeTrackId == _inspirationTracks[index].id) {
-                                  _isPlaying = !_isPlaying;
-                                } else {
-                                  _activeTrackId = _inspirationTracks[index].id;
-                                  _isPlaying = true;
-                                  _progress = 0.0;
-                                }
-                              });
-                            },
-                            child: _buildTrackCard(_inspirationTracks[index], isInspiration: true),
-                          );
-                        },
                       ),
-                    ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Раздел "ДЛЯ ПОИСКА ЛЮБВИ"
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.forFindingLove,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.0,
-                            letterSpacing: 0.28,
-                            color: const Color(0xFF202020),
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.all,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                height: 1.0,
-                                letterSpacing: 0.28,
-                                color: const Color(0xFF202020),
-                                decoration: TextDecoration.none,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                              color: Color(0xFF202020),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 15),
-                  
-                  // Карточки треков для раздела "ДЛЯ ПОИСКА ЛЮБВИ"
-                  if (_loveTracks.isNotEmpty)
-                    SizedBox(
-                      height: 220,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        itemCount: _loveTracks.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (_activeTrackId == _loveTracks[index].id) {
-                                  _isPlaying = !_isPlaying;
-                                } else {
-                                  _activeTrackId = _loveTracks[index].id;
-                                  _isPlaying = true;
-                                  _progress = 0.0;
-                                }
-                              });
-                            },
-                            child: _buildTrackCard(_loveTracks[index], isInspiration: false),
-                          );
-                        },
-                      ),
-                    ),
+                    const SizedBox(height: 40),
+                  ],
                 ],
               ),
             ),
           ),
-          
-          // Мини-плеер (отображается над нижним меню, если есть активный трек)
           if (_activeTrackId != null)
-            MiniPlayer(
-              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
-              track: _allTracks.firstWhere(
-                (t) => t.id == _activeTrackId,
-                orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(
-                  id: '',
-                  title: '',
-                  description: '',
-                  level: '',
-                  image: '',
-                  video: '',
-                  type: '',
-                  category: '',
-                  isPremium: false,
-                  isPlaying: false,
-                ),
-              ),
-              isPlaying: _isPlaying,
-              progress: _progress,
-              currentTime: _currentTime,
-              totalTime: '3:42',
-              onTap: () {
-                final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
-                final t = idx >= 0 ? _allTracks[idx] : _allTracks.first;
-                Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (context) => OpenPlayerScreen(
-                      track: t,
-                      tracks: _allTracks,
-                      initialIndex: idx >= 0 ? idx : 0,
-                      isPlaying: _isPlaying,
-                      progress: _progress,
-                      currentTime: _currentTime,
-                      totalTime: '3:42',
-                      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
-                      onPrevious: () {
-                        if (_activeTrackId != null && idx > 0) {
-                          setState(() {
-                            _activeTrackId = _allTracks[idx - 1].id;
-                            _isPlaying = true;
-                            _progress = 0.0;
-                          });
-                        }
-                      },
-                      onNext: () {
-                        if (_activeTrackId != null && idx < _allTracks.length - 1) {
-                          setState(() {
-                            _activeTrackId = _allTracks[idx + 1].id;
-                            _isPlaying = true;
-                            _progress = 0.0;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                ).then((newActiveId) {
-                  if (newActiveId != null && mounted) {
-                    setState(() => _activeTrackId = newActiveId);
-                  }
-                });
-              },
-              onPlayPause: () {
-                setState(() {
-                  _isPlaying = !_isPlaying;
-                });
-              },
-              onPrevious: () {
-                if (_activeTrackId != null) {
-                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
-                  if (currentIndex > 0) {
-                    setState(() {
-                      _activeTrackId = _allTracks[currentIndex - 1].id;
-                      _isPlaying = true;
-                      _progress = 0.0;
+            ListenableBuilder(
+              listenable: AudioService.instance,
+              builder: (context, _) {
+                final svc = AudioService.instance;
+                final active = _allTracks.firstWhere(
+                  (t) => t.id == _activeTrackId,
+                  orElse: () => _allTracks.isNotEmpty
+                      ? _allTracks.first
+                      : MeditationTrack(
+                          id: '',
+                          title: '',
+                          description: '',
+                          level: '',
+                          image: '',
+                          video: '',
+                          type: '',
+                          category: '',
+                          isPremium: false,
+                          isPlaying: false,
+                        ),
+                );
+                return MiniPlayer(
+                  bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
+                  track: active,
+                  isPlaying: svc.isPlaying,
+                  progress: svc.progress,
+                  currentTime: svc.formattedPosition,
+                  totalTime: active.durationSeconds != null
+                      ? MeditationTrack.formatDuration(active.durationSeconds)
+                      : svc.formattedDuration,
+                  onTap: () {
+                    final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                    final t = idx >= 0 ? _allTracks[idx] : _allTracks.first;
+                    Navigator.of(context).push<String>(
+                      MaterialPageRoute(
+                        builder: (context) => OpenPlayerScreen(
+                          track: t,
+                          tracks: _allTracks,
+                          initialIndex: idx >= 0 ? idx : 0,
+                          isPlaying: svc.isPlaying,
+                          progress: svc.progress,
+                          currentTime: svc.formattedPosition,
+                          totalTime: t.durationSeconds != null
+                              ? MeditationTrack.formatDuration(t.durationSeconds)
+                              : svc.formattedDuration,
+                          onPlayPause: () {
+                            AudioService.instance.togglePlayPause();
+                            setState(() => _isPlaying = svc.isPlaying);
+                          },
+                          onPrevious: () {
+                            if (idx > 0) {
+                              final prev = _allTracks[idx - 1];
+                              setState(() {
+                                _activeTrackId = prev.id;
+                                _isPlaying = true;
+                                _progress = 0.0;
+                              });
+                              if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
+                            }
+                          },
+                          onNext: () {
+                            if (idx < _allTracks.length - 1) {
+                              final next = _allTracks[idx + 1];
+                              setState(() {
+                                _activeTrackId = next.id;
+                                _isPlaying = true;
+                                _progress = 0.0;
+                              });
+                              if (next.video.isNotEmpty) AudioService.instance.play(next.video);
+                            }
+                          },
+                        ),
+                      ),
+                    ).then((newActiveId) {
+                      if (newActiveId != null && mounted) {
+                        setState(() => _activeTrackId = newActiveId);
+                      }
                     });
-                  }
-                }
-              },
-              onNext: () {
-                if (_activeTrackId != null) {
-                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
-                  if (currentIndex < _allTracks.length - 1) {
-                    setState(() {
-                      _activeTrackId = _allTracks[currentIndex + 1].id;
-                      _isPlaying = true;
-                      _progress = 0.0;
-                    });
-                  }
-                }
+                  },
+                  onPlayPause: () {
+                    AudioService.instance.togglePlayPause();
+                    setState(() => _isPlaying = AudioService.instance.isPlaying);
+                  },
+                  onPrevious: () {
+                    final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                    if (idx > 0) {
+                      final prev = _allTracks[idx - 1];
+                      setState(() {
+                        _activeTrackId = prev.id;
+                        _isPlaying = true;
+                        _progress = 0.0;
+                      });
+                      if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
+                    }
+                  },
+                  onNext: () {
+                    final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                    if (idx >= 0 && idx < _allTracks.length - 1) {
+                      final next = _allTracks[idx + 1];
+                      setState(() {
+                        _activeTrackId = next.id;
+                        _isPlaying = true;
+                        _progress = 0.0;
+                      });
+                      if (next.video.isNotEmpty) AudioService.instance.play(next.video);
+                    }
+                  },
+                );
               },
             ),
-          
-          // Нижнее меню поверх изображения
           Positioned(
             bottom: 0,
             left: 0,
@@ -520,28 +371,26 @@ class _MeditationScreenState extends State<MeditationScreen> {
     );
   }
 
-  Widget _buildTrackCard(MeditationTrack track, {bool isInspiration = false}) {
+  Widget _buildTrackCard(MeditationTrack track) {
     return Container(
-      width: 150, // Чуть меньше ширина карточки
+      width: 150,
       margin: const EdgeInsets.only(right: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Карточка с изображением/видео
           Container(
-            height: 145, // Увеличенная высота карточки
+            height: 145,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               color: Colors.grey[300],
             ),
             child: Stack(
               children: [
-                // Фоновое изображение или видео
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: track.image.isNotEmpty
-                      ? Image.asset(
+                      ? Image.network(
                           track.image,
                           width: double.infinity,
                           height: double.infinity,
@@ -579,7 +428,6 @@ class _MeditationScreenState extends State<MeditationScreen> {
                       ),
                     ),
                   ),
-                // Иконка медитации в левом верхнем углу
                 Positioned(
                   top: 10,
                   left: 10,
@@ -596,7 +444,8 @@ class _MeditationScreenState extends State<MeditationScreen> {
                         child: Image.asset(
                           'assets/icons/meditationicon.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.self_improvement, size: 16, color: Color(0xFF202020)),
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.self_improvement, size: 16, color: Color(0xFF202020)),
                         ),
                       ),
                     ),
@@ -622,16 +471,8 @@ class _MeditationScreenState extends State<MeditationScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: (_activeTrackId == track.id && _isPlaying)
-                              ? const Icon(
-                                  Icons.pause,
-                                  size: 16,
-                                  color: Colors.white,
-                                )
-                              : const Icon(
-                                  Icons.play_arrow,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
+                              ? const Icon(Icons.pause, size: 16, color: Colors.white)
+                              : const Icon(Icons.play_arrow, size: 20, color: Colors.white),
                         ),
                       ),
                     ),
@@ -640,8 +481,6 @@ class _MeditationScreenState extends State<MeditationScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          
-          // Название трека (компактное, как на втором скриншоте)
           Text(
             track.title,
             style: GoogleFonts.inter(
@@ -654,8 +493,6 @@ class _MeditationScreenState extends State<MeditationScreen> {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 3),
-          
-          // Описание с уровнем
           Text(
             track.description,
             style: GoogleFonts.inter(
@@ -688,7 +525,8 @@ class _MeditationScreenState extends State<MeditationScreen> {
               child: Image.asset(
                 'assets/icons/harmonyicon.png',
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white, size: 12),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.auto_awesome, color: Colors.white, size: 12),
               ),
             ),
           ),

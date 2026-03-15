@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 import 'core/constants/app_constants.dart';
 import 'core/utils/navigation_utils.dart';
+import 'core/audio/audio_service.dart';
 import 'core/api/content_api.dart';
 import 'features/loading/loading_screen.dart';
 import 'features/registration/registration_screen.dart';
@@ -364,11 +365,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _activeTrackContext = contextTracks;
       if (_activeTrackId == track.id) {
         _isPlaying = !_isPlaying;
+        AudioService.instance.togglePlayPause();
       } else {
         _activeTrackId = track.id;
         _isPlaying = true;
         _progress = 0.0;
         _currentTime = '0:00';
+        if (track.video.isNotEmpty) {
+          AudioService.instance.play(track.video);
+        }
       }
     });
     ContentApi.registerTrackListen(track.id).catchError((_) {});
@@ -390,27 +395,36 @@ class _HomeScreenState extends State<HomeScreen> {
           track: active,
           tracks: _activeTrackContext,
           initialIndex: idx,
-          isPlaying: _isPlaying,
-          progress: _progress,
-          currentTime: _currentTime,
-          totalTime: MeditationTrack.formatDuration(active.durationSeconds),
-          onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+          isPlaying: AudioService.instance.isPlaying,
+          progress: AudioService.instance.progress,
+          currentTime: AudioService.instance.formattedPosition,
+          totalTime: active.durationSeconds != null
+              ? MeditationTrack.formatDuration(active.durationSeconds)
+              : AudioService.instance.formattedDuration,
+          onPlayPause: () {
+            AudioService.instance.togglePlayPause();
+            setState(() => _isPlaying = AudioService.instance.isPlaying);
+          },
           onPrevious: () {
             if (idx > 0) {
+              final prev = _activeTrackContext[idx - 1];
               setState(() {
-                _activeTrackId = _activeTrackContext[idx - 1].id;
+                _activeTrackId = prev.id;
                 _isPlaying = true;
                 _progress = 0.0;
               });
+              if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
             }
           },
           onNext: () {
             if (idx < _activeTrackContext.length - 1) {
+              final next = _activeTrackContext[idx + 1];
               setState(() {
-                _activeTrackId = _activeTrackContext[idx + 1].id;
+                _activeTrackId = next.id;
                 _isPlaying = true;
                 _progress = 0.0;
               });
+              if (next.video.isNotEmpty) AudioService.instance.play(next.video);
             }
           },
         ),
@@ -604,28 +618,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
           if (_activeTrackId != null)
-            MiniPlayer(
-              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
-              track: _activeTrackContext.firstWhere(
-                (t) => t.id == _activeTrackId,
-                orElse: () => _activeTrackContext.isNotEmpty ? _activeTrackContext.first : MeditationTrack(
-                  id: '',
-                  title: '',
-                  description: '',
-                  level: '',
-                  image: '',
-                  video: '',
-                  type: '',
-                  category: '',
-                  isPremium: false,
-                  isPlaying: false,
-                ),
-              ),
-              isPlaying: _isPlaying,
-              progress: _progress,
-              currentTime: _currentTime,
-              totalTime: MeditationTrack.formatDuration(
-                _activeTrackContext.firstWhere(
+            ListenableBuilder(
+              listenable: AudioService.instance,
+              builder: (context, _) {
+                final svc = AudioService.instance;
+                final active = _activeTrackContext.firstWhere(
                   (t) => t.id == _activeTrackId,
                   orElse: () => _activeTrackContext.isNotEmpty ? _activeTrackContext.first : MeditationTrack(
                     id: '',
@@ -639,29 +636,46 @@ class _HomeScreenState extends State<HomeScreen> {
                     isPremium: false,
                     isPlaying: false,
                   ),
-                ).durationSeconds,
-              ),
-              onTap: _openActiveTrackPlayer,
-              onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
-              onPrevious: () {
-                final idx = _activeTrackContext.indexWhere((t) => t.id == _activeTrackId);
-                if (idx > 0) {
-                  setState(() {
-                    _activeTrackId = _activeTrackContext[idx - 1].id;
-                    _isPlaying = true;
-                    _progress = 0.0;
-                  });
-                }
-              },
-              onNext: () {
-                final idx = _activeTrackContext.indexWhere((t) => t.id == _activeTrackId);
-                if (idx >= 0 && idx < _activeTrackContext.length - 1) {
-                  setState(() {
-                    _activeTrackId = _activeTrackContext[idx + 1].id;
-                    _isPlaying = true;
-                    _progress = 0.0;
-                  });
-                }
+                );
+                return MiniPlayer(
+                  bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
+                  track: active,
+                  isPlaying: svc.isPlaying,
+                  progress: svc.progress,
+                  currentTime: svc.formattedPosition,
+                  totalTime: active.durationSeconds != null
+                      ? MeditationTrack.formatDuration(active.durationSeconds)
+                      : svc.formattedDuration,
+                  onTap: _openActiveTrackPlayer,
+                  onPlayPause: () {
+                    AudioService.instance.togglePlayPause();
+                    setState(() => _isPlaying = AudioService.instance.isPlaying);
+                  },
+                  onPrevious: () {
+                    final idx = _activeTrackContext.indexWhere((t) => t.id == _activeTrackId);
+                    if (idx > 0) {
+                      final prev = _activeTrackContext[idx - 1];
+                      setState(() {
+                        _activeTrackId = prev.id;
+                        _isPlaying = true;
+                        _progress = 0.0;
+                      });
+                      if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
+                    }
+                  },
+                  onNext: () {
+                    final idx = _activeTrackContext.indexWhere((t) => t.id == _activeTrackId);
+                    if (idx >= 0 && idx < _activeTrackContext.length - 1) {
+                      final next = _activeTrackContext[idx + 1];
+                      setState(() {
+                        _activeTrackId = next.id;
+                        _isPlaying = true;
+                        _progress = 0.0;
+                      });
+                      if (next.video.isNotEmpty) AudioService.instance.play(next.video);
+                    }
+                  },
+                );
               },
             ),
           

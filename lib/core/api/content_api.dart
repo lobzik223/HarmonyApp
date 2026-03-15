@@ -8,6 +8,19 @@ import '../../shared/models/meditation_track.dart';
 
 const _apiPrefix = '/api';
 
+/// Секция с треками с бэкенда (название раздела + карточки).
+class SectionWithTracks {
+  final String name;
+  final String slug;
+  final List<MeditationTrack> tracks;
+
+  SectionWithTracks({
+    required this.name,
+    required this.slug,
+    required this.tracks,
+  });
+}
+
 /// Загрузка секций и треков с бэкенда. Заголовок X-Harmony-App-Key обязателен, если задан APP_KEY.
 class ContentApi {
   static String get _base => AppConstants.baseUrl.replaceFirst(RegExp(r'/$'), '');
@@ -54,34 +67,26 @@ class ContentApi {
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
-  /// Секции с треками (для медитаций: type=MEDITATION). Маппинг в [MeditationTrack] по section.slug как category.
-  static Future<List<MeditationTrack>> getMeditationTracks() async {
-    final sections = await getSections(type: 'MEDITATION');
-    final allTracks = <MeditationTrack>[];
-    for (final section in sections) {
-      final sectionId = section['id'] as String?;
-      final slug = (section['slug'] as String?) ?? 'other';
-      final tracks = await getTracks(sectionId: sectionId);
-      for (final t in tracks) {
-        allTracks.add(MeditationTrack.fromApiJson(t, category: slug));
-      }
-    }
-    return allTracks;
-  }
-
-  /// Секции с треками для сна (type=SLEEP). Маппинг по section.slug (nightmare_exclusion, other_direction и т.д.).
-  static Future<List<MeditationTrack>> getSleepTracks() async {
-    final sections = await getSections(type: 'SLEEP');
-    final allTracks = <MeditationTrack>[];
-    for (final section in sections) {
-      final sectionId = section['id'] as String?;
-      final slug = (section['slug'] as String?) ?? 'other';
-      final tracks = await getTracks(sectionId: sectionId);
-      for (final t in tracks) {
-        allTracks.add(MeditationTrack.fromApiJson(t, category: slug));
-      }
-    }
-    return allTracks;
+  /// Секции с треками с бэкенда (type=MEDITATION или SLEEP). Разделы и карточки приходят с API.
+  static Future<List<SectionWithTracks>> getSectionsWithTracks(String type) async {
+    final res = await http
+        .get(
+          Uri.parse('$_base$_apiPrefix/content/sections-with-tracks?type=${Uri.encodeComponent(type)}'),
+          headers: await _headers(),
+        )
+        .timeout(AppConstants.apiTimeout);
+    if (res.statusCode != 200) throw Exception('SectionsWithTracks: ${res.statusCode}');
+    final list = json.decode(res.body) as List<dynamic>;
+    return list.map((e) {
+      final section = e as Map<String, dynamic>;
+      final name = section['name'] as String? ?? '';
+      final slug = (section['slug'] as String?) ?? '';
+      final tracksRaw = section['tracks'] as List<dynamic>? ?? [];
+      final tracks = tracksRaw
+          .map((t) => MeditationTrack.fromApiJson(t as Map<String, dynamic>, category: slug))
+          .toList();
+      return SectionWithTracks(name: name, slug: slug, tracks: tracks);
+    }).toList();
   }
 
   /// GET /api/content/home — главный экран: featured, recommended, emergency (статьи).

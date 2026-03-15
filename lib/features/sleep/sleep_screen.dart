@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
+import '../../core/audio/audio_service.dart';
 import '../../shared/models/meditation_track.dart';
 import '../../shared/widgets/mini_player.dart';
 import '../../shared/widgets/harmony_bottom_nav.dart';
@@ -13,8 +14,7 @@ import '../tasks/tasks_screen.dart';
 import '../player/player_screen.dart';
 import '../player/open_player_screen.dart';
 
-/// Экран "Сон"
-/// Фон с градиентами точно как в SVG
+/// Экран "Сон" — разделы и карточки с бэкенда.
 class SleepScreen extends StatefulWidget {
   const SleepScreen({super.key});
 
@@ -23,13 +23,12 @@ class SleepScreen extends StatefulWidget {
 }
 
 class _SleepScreenState extends State<SleepScreen> {
-  List<MeditationTrack> _nightmareExclusionTracks = [];
-  List<MeditationTrack> _otherDirectionTracks = [];
+  List<SectionWithTracks> _sections = [];
   List<MeditationTrack> _allTracks = [];
   String? _activeTrackId;
   bool _isPlaying = false;
   double _progress = 0.0;
-  String _currentTime = '2:23:65';
+  String _currentTime = '0:00';
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -46,13 +45,11 @@ class _SleepScreenState extends State<SleepScreen> {
 
   Future<void> _loadTracks() async {
     try {
-      final allTracks = await ContentApi.getSleepTracks();
-      final nightmareExclusion = allTracks.where((track) => track.category == 'nightmare_exclusion').toList();
-      final otherDirection = allTracks.where((track) => track.category == 'other_direction').toList();
+      final sections = await ContentApi.getSectionsWithTracks('SLEEP');
+      final allTracks = sections.expand((s) => s.tracks).toList();
       if (mounted) {
         setState(() {
-          _nightmareExclusionTracks = nightmareExclusion;
-          _otherDirectionTracks = otherDirection;
+          _sections = sections;
           _allTracks = allTracks;
           _activeTrackId = null;
           _isPlaying = false;
@@ -61,8 +58,7 @@ class _SleepScreenState extends State<SleepScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _nightmareExclusionTracks = [];
-          _otherDirectionTracks = [];
+          _sections = [];
           _allTracks = [];
         });
       }
@@ -99,11 +95,10 @@ class _SleepScreenState extends State<SleepScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = (_activeTrackId != null ? 160.0 : 100.0);
-    
+
     return Scaffold(
       body: Stack(
         children: [
-          // Основной фон с диагональным градиентом
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -112,17 +107,15 @@ class _SleepScreenState extends State<SleepScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF3E43E9), // глубокий фиолетово-синий (верхний левый угол)
-                  Color(0xFF5565F2), // холодный синий (28%)
-                  Color(0xFF9AD3FF), // мягкий небесный (55%)
-                  Color(0xFF39D8D0), // бирюза (правый низ)
+                  Color(0xFF3E43E9),
+                  Color(0xFF5565F2),
+                  Color(0xFF9AD3FF),
+                  Color(0xFF39D8D0),
                 ],
                 stops: [0.0, 0.28, 0.55, 1.0],
               ),
             ),
           ),
-          
-          // Бирюзовый блик справа-ниже
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -139,8 +132,6 @@ class _SleepScreenState extends State<SleepScreen> {
               ),
             ),
           ),
-
-          // Скроллируемый контент
           Scrollbar(
             controller: _scrollController,
             thumbVisibility: true,
@@ -151,275 +142,217 @@ class _SleepScreenState extends State<SleepScreen> {
               child: Padding(
                 padding: EdgeInsets.only(
                   top: 62,
-                  bottom: bottomPadding + 20, // Отступ снизу
+                  bottom: bottomPadding + 20,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                  // Заголовок "СОН"
-                  Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.sleepTitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w400,
-                        height: 1.0,
-                        letterSpacing: 0.4,
-                        color: Colors.white,
-                        decoration: TextDecoration.none,
+                    Center(
+                      child: Text(
+                        AppLocalizations.of(context)!.sleepTitle,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w400,
+                          height: 1.0,
+                          letterSpacing: 0.4,
+                          color: Colors.white,
+                          decoration: TextDecoration.none,
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 48),
-                  
-                  // Раздел "ИСКЛЮЧЕНИЕ КОШМАРОВ"
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.nightmareExclusion,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.0,
-                            letterSpacing: 0.28,
-                            color: Colors.white,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 48),
+                    for (final section in _sections) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              AppLocalizations.of(context)!.all,
+                              section.name.toUpperCase(),
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w400,
+                                fontWeight: FontWeight.w600,
                                 height: 1.0,
                                 letterSpacing: 0.28,
                                 color: Colors.white,
                                 decoration: TextDecoration.none,
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                              color: Colors.white,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppLocalizations.of(context)!.all,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.0,
+                                    letterSpacing: 0.28,
+                                    color: Colors.white,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 15),
-                  
-                  // Карточки треков для раздела "ИСКЛЮЧЕНИЕ КОШМАРОВ"
-                  if (_nightmareExclusionTracks.isNotEmpty)
-                    SizedBox(
-                      height: 220,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        itemCount: _nightmareExclusionTracks.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (_activeTrackId == _nightmareExclusionTracks[index].id) {
-                                  _isPlaying = !_isPlaying;
-                                } else {
-                                  _activeTrackId = _nightmareExclusionTracks[index].id;
-                                  _isPlaying = true;
-                                  _progress = 0.0;
-                                }
-                              });
-                            },
-                            child: _buildTrackCard(_nightmareExclusionTracks[index]),
-                          );
-                        },
                       ),
-                    ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Раздел "ДРУГОЕ НАПРАВЛЕНИЕ"
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.otherDirection,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.0,
-                            letterSpacing: 0.28,
-                            color: Colors.white,
-                            decoration: TextDecoration.none,
+                      const SizedBox(height: 15),
+                      if (section.tracks.isNotEmpty)
+                        SizedBox(
+                          height: 220,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            itemCount: section.tracks.length,
+                            itemBuilder: (context, index) {
+                              final track = section.tracks[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (_activeTrackId == track.id) {
+                                      _isPlaying = !_isPlaying;
+                                      AudioService.instance.togglePlayPause();
+                                    } else {
+                                      _activeTrackId = track.id;
+                                      _isPlaying = true;
+                                      _progress = 0.0;
+                                      if (track.video.isNotEmpty) {
+                                        AudioService.instance.play(track.video);
+                                      }
+                                    }
+                                  });
+                                },
+                                child: _buildTrackCard(track),
+                              );
+                            },
                           ),
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.all,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                height: 1.0,
-                                letterSpacing: 0.28,
-                                color: Colors.white,
-                                decoration: TextDecoration.none,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 15),
-                  
-                  // Карточки треков для раздела "ДРУГОЕ НАПРАВЛЕНИЕ"
-                  if (_otherDirectionTracks.isNotEmpty)
-                    SizedBox(
-                      height: 220,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        itemCount: _otherDirectionTracks.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (_activeTrackId == _otherDirectionTracks[index].id) {
-                                  _isPlaying = !_isPlaying;
-                                } else {
-                                  _activeTrackId = _otherDirectionTracks[index].id;
-                                  _isPlaying = true;
-                                  _progress = 0.0;
-                                }
-                              });
-                            },
-                            child: _buildTrackCard(_otherDirectionTracks[index]),
-                          );
-                        },
-                      ),
-                    ),
+                      const SizedBox(height: 40),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
-
-          // Мини-плеер
           if (_activeTrackId != null)
-            MiniPlayer(
-              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
-              track: _allTracks.firstWhere(
-                (t) => t.id == _activeTrackId,
-                orElse: () => _allTracks.isNotEmpty ? _allTracks.first : MeditationTrack(
-                  id: '',
-                  title: '',
-                  description: '',
-                  level: '',
-                  image: '',
-                  video: '',
-                  type: '',
-                  category: '',
-                  isPremium: false,
-                  isPlaying: false,
-                ),
-              ),
-              isPlaying: _isPlaying,
-              progress: _progress,
-              currentTime: _currentTime,
-              totalTime: '3:42',
-              onTap: () {
-                final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
-                final t = idx >= 0 ? _allTracks[idx] : _allTracks.first;
-                Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (context) => OpenPlayerScreen(
-                      track: t,
-                      tracks: _allTracks,
-                      initialIndex: idx >= 0 ? idx : 0,
-                      isPlaying: _isPlaying,
-                      progress: _progress,
-                      currentTime: _currentTime,
-                      totalTime: '3:42',
-                      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
-                      onPrevious: () {
-                        if (_activeTrackId != null && idx > 0) {
-                          setState(() {
-                            _activeTrackId = _allTracks[idx - 1].id;
-                            _isPlaying = true;
-                            _progress = 0.0;
-                          });
-                        }
-                      },
-                      onNext: () {
-                        if (_activeTrackId != null && idx < _allTracks.length - 1) {
-                          setState(() {
-                            _activeTrackId = _allTracks[idx + 1].id;
-                            _isPlaying = true;
-                            _progress = 0.0;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                ).then((newActiveId) {
-                  if (newActiveId != null && mounted) {
-                    setState(() => _activeTrackId = newActiveId);
-                  }
-                });
-              },
-              onPlayPause: () {
-                setState(() {
-                  _isPlaying = !_isPlaying;
-                });
-              },
-              onPrevious: () {
-                if (_activeTrackId != null) {
-                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
-                  if (currentIndex > 0) {
-                    setState(() {
-                      _activeTrackId = _allTracks[currentIndex - 1].id;
-                      _isPlaying = true;
-                      _progress = 0.0;
+            ListenableBuilder(
+              listenable: AudioService.instance,
+              builder: (context, _) {
+                final svc = AudioService.instance;
+                final active = _allTracks.firstWhere(
+                  (t) => t.id == _activeTrackId,
+                  orElse: () => _allTracks.isNotEmpty
+                      ? _allTracks.first
+                      : MeditationTrack(
+                          id: '',
+                          title: '',
+                          description: '',
+                          level: '',
+                          image: '',
+                          video: '',
+                          type: '',
+                          category: '',
+                          isPremium: false,
+                          isPlaying: false,
+                        ),
+                );
+                return MiniPlayer(
+                  bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
+                  track: active,
+                  isPlaying: svc.isPlaying,
+                  progress: svc.progress,
+                  currentTime: svc.formattedPosition,
+                  totalTime: active.durationSeconds != null
+                      ? MeditationTrack.formatDuration(active.durationSeconds)
+                      : svc.formattedDuration,
+                  onTap: () {
+                    final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                    final t = idx >= 0 ? _allTracks[idx] : _allTracks.first;
+                    Navigator.of(context).push<String>(
+                      MaterialPageRoute(
+                        builder: (context) => OpenPlayerScreen(
+                          track: t,
+                          tracks: _allTracks,
+                          initialIndex: idx >= 0 ? idx : 0,
+                          isPlaying: svc.isPlaying,
+                          progress: svc.progress,
+                          currentTime: svc.formattedPosition,
+                          totalTime: t.durationSeconds != null
+                              ? MeditationTrack.formatDuration(t.durationSeconds)
+                              : svc.formattedDuration,
+                          onPlayPause: () {
+                            AudioService.instance.togglePlayPause();
+                            setState(() => _isPlaying = svc.isPlaying);
+                          },
+                          onPrevious: () {
+                            if (idx > 0) {
+                              final prev = _allTracks[idx - 1];
+                              setState(() {
+                                _activeTrackId = prev.id;
+                                _isPlaying = true;
+                                _progress = 0.0;
+                              });
+                              if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
+                            }
+                          },
+                          onNext: () {
+                            if (idx < _allTracks.length - 1) {
+                              final next = _allTracks[idx + 1];
+                              setState(() {
+                                _activeTrackId = next.id;
+                                _isPlaying = true;
+                                _progress = 0.0;
+                              });
+                              if (next.video.isNotEmpty) AudioService.instance.play(next.video);
+                            }
+                          },
+                        ),
+                      ),
+                    ).then((newActiveId) {
+                      if (newActiveId != null && mounted) {
+                        setState(() => _activeTrackId = newActiveId);
+                      }
                     });
-                  }
-                }
-              },
-              onNext: () {
-                if (_activeTrackId != null) {
-                  final currentIndex = _allTracks.indexWhere((t) => t.id == _activeTrackId);
-                  if (currentIndex < _allTracks.length - 1) {
-                    setState(() {
-                      _activeTrackId = _allTracks[currentIndex + 1].id;
-                      _isPlaying = true;
-                      _progress = 0.0;
-                    });
-                  }
-                }
+                  },
+                  onPlayPause: () {
+                    AudioService.instance.togglePlayPause();
+                    setState(() => _isPlaying = AudioService.instance.isPlaying);
+                  },
+                  onPrevious: () {
+                    final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                    if (idx > 0) {
+                      final prev = _allTracks[idx - 1];
+                      setState(() {
+                        _activeTrackId = prev.id;
+                        _isPlaying = true;
+                        _progress = 0.0;
+                      });
+                      if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
+                    }
+                  },
+                  onNext: () {
+                    final idx = _allTracks.indexWhere((t) => t.id == _activeTrackId);
+                    if (idx >= 0 && idx < _allTracks.length - 1) {
+                      final next = _allTracks[idx + 1];
+                      setState(() {
+                        _activeTrackId = next.id;
+                        _isPlaying = true;
+                        _progress = 0.0;
+                      });
+                      if (next.video.isNotEmpty) AudioService.instance.play(next.video);
+                    }
+                  },
+                );
               },
             ),
-          
-          // Нижнее меню поверх изображения
           Positioned(
             bottom: 0,
             left: 0,
@@ -455,7 +388,7 @@ class _SleepScreenState extends State<SleepScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: track.image.isNotEmpty
-                      ? Image.asset(
+                      ? Image.network(
                           track.image,
                           width: double.infinity,
                           height: double.infinity,
@@ -493,7 +426,6 @@ class _SleepScreenState extends State<SleepScreen> {
                       ),
                     ),
                   ),
-                // Иконка сна в левом верхнем углу
                 Positioned(
                   top: 10,
                   left: 10,
@@ -510,7 +442,8 @@ class _SleepScreenState extends State<SleepScreen> {
                         child: Image.asset(
                           'assets/icons/soonicon.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.bedtime, size: 16, color: Color(0xFF202020)),
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.bedtime, size: 16, color: Color(0xFF202020)),
                         ),
                       ),
                     ),
@@ -536,16 +469,8 @@ class _SleepScreenState extends State<SleepScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: (_activeTrackId == track.id && _isPlaying)
-                              ? const Icon(
-                                  Icons.pause,
-                                  size: 16,
-                                  color: Colors.white,
-                                )
-                              : const Icon(
-                                  Icons.play_arrow,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
+                              ? const Icon(Icons.pause, size: 16, color: Colors.white)
+                              : const Icon(Icons.play_arrow, size: 20, color: Colors.white),
                         ),
                       ),
                     ),
@@ -554,8 +479,6 @@ class _SleepScreenState extends State<SleepScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          
-          // Название трека (белый цвет)
           Text(
             track.title,
             style: GoogleFonts.inter(
@@ -568,8 +491,6 @@ class _SleepScreenState extends State<SleepScreen> {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 3),
-          
-          // Длительность (белый цвет)
           Text(
             track.description,
             style: GoogleFonts.inter(
@@ -602,7 +523,8 @@ class _SleepScreenState extends State<SleepScreen> {
               child: Image.asset(
                 'assets/icons/harmonyicon.png',
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white, size: 12),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.auto_awesome, color: Colors.white, size: 12),
               ),
             ),
           ),
@@ -630,4 +552,3 @@ class _SleepScreenState extends State<SleepScreen> {
     );
   }
 }
-
