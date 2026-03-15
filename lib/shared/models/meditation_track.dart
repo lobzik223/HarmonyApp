@@ -11,6 +11,8 @@ class MeditationTrack {
   final String category;
   final bool isPremium;
   final bool isPlaying;
+  /// AUDIO | VIDEO — тип медиа для воспроизведения
+  final String mediaType;
   /// Длительность в секундах (для отображения "N мин" и totalTime в плеере).
   final int? durationSeconds;
 
@@ -25,8 +27,11 @@ class MeditationTrack {
     required this.category,
     required this.isPremium,
     required this.isPlaying,
+    this.mediaType = 'AUDIO',
     this.durationSeconds,
   });
+
+  bool get isVideo => mediaType == 'VIDEO';
 
   factory MeditationTrack.fromJson(Map<String, dynamic> json) {
     return MeditationTrack(
@@ -40,6 +45,7 @@ class MeditationTrack {
       category: json['category'] as String? ?? 'relaxation',
       isPremium: json['isPremium'] as bool? ?? false,
       isPlaying: json['isPlaying'] as bool? ?? false,
+      mediaType: json['mediaType'] as String? ?? 'AUDIO',
       durationSeconds: json['durationSeconds'] as int?,
     );
   }
@@ -49,19 +55,23 @@ class MeditationTrack {
     final base = AppConstants.baseUrl.replaceFirst(RegExp(r'/$'), '');
     String image = json['coverUrl'] as String? ?? '';
     if (image.isNotEmpty && !image.startsWith('http')) image = '$base$image';
-    String video = json['audioUrl'] as String? ?? '';
-    if (video.isNotEmpty && !video.startsWith('http')) video = '$base$video';
+    final mediaType = json['mediaType'] as String? ?? 'AUDIO';
+    String mediaUrl = mediaType == 'VIDEO'
+        ? (json['videoUrl'] as String? ?? '')
+        : (json['audioUrl'] as String? ?? '');
+    if (mediaUrl.isNotEmpty && !mediaUrl.startsWith('http')) mediaUrl = '$base$mediaUrl';
     return MeditationTrack(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['descriptionShort'] as String? ?? '',
       level: json['level'] as String? ?? 'A',
       image: image,
-      video: video,
+      video: mediaUrl,
       type: 'meditation',
       category: category,
       isPremium: json['isPremium'] as bool? ?? false,
       isPlaying: false,
+      mediaType: mediaType,
       durationSeconds: json['durationSeconds'] as int?,
     );
   }
@@ -78,6 +88,7 @@ class MeditationTrack {
       'category': category,
       'isPremium': isPremium,
       'isPlaying': isPlaying,
+      'mediaType': mediaType,
       if (durationSeconds != null) 'durationSeconds': durationSeconds,
     };
   }

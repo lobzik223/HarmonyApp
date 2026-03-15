@@ -19,6 +19,7 @@ import 'features/sleep/sleep_screen.dart';
 import 'features/tasks/tasks_screen.dart';
 import 'features/player/player_screen.dart';
 import 'features/player/open_player_screen.dart';
+import 'features/player/video_player_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'shared/models/meditation_track.dart';
 import 'shared/widgets/harmony_bottom_nav.dart';
@@ -361,6 +362,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _setActiveTrack(MeditationTrack track, List<MeditationTrack> contextTracks) {
+    if (track.isVideo) {
+      Navigator.of(context).push(
+        noAnimationRoute(VideoPlayerScreen(
+          track: track,
+          tracks: contextTracks,
+          initialIndex: contextTracks.indexWhere((t) => t.id == track.id).clamp(0, contextTracks.length - 1),
+        )),
+      ).then((_) => setState(() {}));
+      ContentApi.registerTrackListen(track.id).catchError((_) {});
+      return;
+    }
     if (AudioService.instance.currentTrack?.id == track.id) {
       AudioService.instance.togglePlayPause();
       setState(() => _isPlaying = AudioService.instance.isPlaying);
@@ -1016,9 +1028,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCourseCards() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: _courses.map((course) {
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 20),
           child: GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -1028,62 +1041,67 @@ class _HomeScreenState extends State<HomeScreen> {
                 )),
               );
             },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E2768),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Фото целиком, без фона и линий — как в «О силе мышления»
+                ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      height: 190,
-                      width: double.infinity,
-                      child: Image.network(
-                        course.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: const Color(0xFF2C2F4D),
-                          child: const Icon(Icons.image, color: Colors.white54, size: 40),
+                  child: SizedBox(
+                    height: 190,
+                    width: double.infinity,
+                    child: Image.network(
+                      course.image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A237E),
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        child: const Icon(Icons.image, color: Colors.white54, size: 48),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            course.title,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (course.subtitle != null && course.subtitle!.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              course.subtitle!,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.white70,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                // Название и описание под карточкой — без фона, как в «О силе мышления»
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, top: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        course.title,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          height: 1.25,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (course.subtitle != null && course.subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          course.subtitle!,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white.withOpacity(0.85),
+                            height: 1.25,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         );

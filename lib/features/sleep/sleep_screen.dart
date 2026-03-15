@@ -13,6 +13,7 @@ import '../meditation/meditation_screen.dart';
 import '../tasks/tasks_screen.dart';
 import '../player/player_screen.dart';
 import '../player/open_player_screen.dart';
+import '../player/video_player_screen.dart';
 
 /// Экран "Сон" — разделы и карточки с бэкенда.
 class SleepScreen extends StatefulWidget {
@@ -214,6 +215,17 @@ class _SleepScreenState extends State<SleepScreen> {
                               final track = section.tracks[index];
                               return GestureDetector(
                                 onTap: () {
+                                  if (track.isVideo) {
+                                    Navigator.of(context).push(
+                                      noAnimationRoute(VideoPlayerScreen(
+                                        track: track,
+                                        tracks: section.tracks,
+                                        initialIndex: section.tracks.indexWhere((t) => t.id == track.id).clamp(0, section.tracks.length - 1),
+                                      )),
+                                    );
+                                    ContentApi.registerTrackListen(track.id).catchError((_) {});
+                                    return;
+                                  }
                                   if (AudioService.instance.currentTrack?.id == track.id) {
                                     AudioService.instance.togglePlayPause();
                                     setState(() => _isPlaying = AudioService.instance.isPlaying);
