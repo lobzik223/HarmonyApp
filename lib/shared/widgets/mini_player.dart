@@ -1,6 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/audio/audio_service.dart';
 import '../models/meditation_track.dart';
 
 /// Мини-плеер, который отображается внизу экрана.
@@ -13,10 +15,15 @@ class MiniPlayer extends StatelessWidget {
   final VoidCallback? onTap;
   final double progress; // 0.0 - 1.0
   final bool isPlaying;
+  final bool isLoading;
   final String currentTime;
   final String totalTime;
   /// Отступ снизу: ставим высоту нижней панели, чтобы белый фон плеера не перекрывал навбар.
   final double bottomOffset;
+  /// Прозрачный стеклянный стиль (для главного окна плеера).
+  final bool transparentStyle;
+  /// Доп. смещение вниз (отрицательное = ниже).
+  final double bottomOffsetAdjustment;
 
   const MiniPlayer({
     super.key,
@@ -27,9 +34,12 @@ class MiniPlayer extends StatelessWidget {
     this.onTap,
     this.progress = 0.0,
     this.isPlaying = false,
+    this.isLoading = false,
     this.currentTime = '10:56',
     this.totalTime = '10:56',
     this.bottomOffset = 0.0,
+    this.transparentStyle = false,
+    this.bottomOffsetAdjustment = 0.0,
   });
 
   @override
@@ -38,9 +48,9 @@ class MiniPlayer extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final double bottomPadding = bottomOffset - 28;
+    final double bottomPadding = bottomOffset + 20;
     return Positioned(
-      bottom: bottomOffset - 28,
+      bottom: bottomOffset - 28 + bottomOffsetAdjustment,
       left: 0,
       right: 0,
       child: GestureDetector(
@@ -50,81 +60,142 @@ class MiniPlayer extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Основной контент плеера — белый фон растянут вниз до конца экрана
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.only(bottom: bottomPadding),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+            // Основной контент плеера
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
-              child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-            // Прогресс-бар сверху с ручкой
-            Container(
-              height: 3,
-              margin: const EdgeInsets.only(top: 0),
-              child: Stack(
-                children: [
-                  // Фон прогресс-бара
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.2), // Светло-серый на белом фоне
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
-                    ),
-                  ),
-                  // Заполненная часть прогресс-бара
-                  FractionallySizedBox(
-                    widthFactor: progress.clamp(0.0, 1.0),
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF4FC3F7), // Светло-синий
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(16),
+              child: (transparentStyle
+                  ? BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.only(bottom: bottomPadding),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.22),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                          border: Border(
+                            top: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: _playerContentChildren(),
                         ),
                       ),
-                    ),
-                  ),
-                  // Ручка прогресс-бара (кружок)
-                  if (progress > 0.0)
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Positioned(
-                          left: constraints.maxWidth * progress.clamp(0.0, 1.0) - 5,
-                          top: -4,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4FC3F7),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
+                    )
+                  : Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.only(bottom: bottomPadding),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, -2),
                           ),
-                        );
-                      },
-                    ),
-                ],
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: _playerContentChildren(),
+                      ),
+                    )),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _playerContentChildren() => [
+            // Прогресс-бар с кругом как в OpenPlayer (тап и перетаскивание для перемотки)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const double barHeight = 4;
+                  const double thumbRadius = 7;
+                  final double p = progress.clamp(0.0, 1.0);
+                  const Color teal = Color(0xFF46E4E3);
+                  final width = constraints.maxWidth;
+                  final thumbLeft = (width * p).clamp(thumbRadius, width - thumbRadius);
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (d) {
+                      final x = d.localPosition.dx;
+                      final newProgress = (x / width).clamp(0.0, 1.0);
+                      AudioService.instance.seekTo(newProgress);
+                    },
+                    onPanStart: (d) {
+                      final x = d.localPosition.dx;
+                      final newProgress = (x / width).clamp(0.0, 1.0);
+                      AudioService.instance.seekTo(newProgress);
+                    },
+                    onPanUpdate: (d) {
+                      final x = d.localPosition.dx;
+                      final newProgress = (x / width).clamp(0.0, 1.0);
+                      AudioService.instance.seekTo(newProgress);
+                    },
+                    child: Stack(
+                    alignment: Alignment.centerLeft,
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        height: barHeight,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: transparentStyle
+                              ? Colors.white.withOpacity(0.55)
+                              : Colors.grey.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(barHeight / 2),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: p,
+                        child: Container(
+                          height: barHeight,
+                          decoration: BoxDecoration(
+                            color: teal,
+                            borderRadius: BorderRadius.circular(barHeight / 2),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: thumbLeft - thumbRadius,
+                        child: Container(
+                          width: thumbRadius * 2,
+                          height: thumbRadius * 2,
+                          decoration: BoxDecoration(
+                            color: teal,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.95),
+                              width: 1.8,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: teal.withOpacity(0.45),
+                                blurRadius: 4,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  );
+                },
               ),
             ),
             // Основной контент плеера
@@ -132,48 +203,25 @@ class MiniPlayer extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
-                  // Иконка альбома с наушниками (слева)
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12), // Загнутые углы
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFB3E5FC), // Светло-синий
-                          Colors.white,
-                        ],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Фоновые точки/частицы
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: CustomPaint(
-                              painter: ParticlesPainter(),
-                            ),
-                          ),
-                        ),
-                        // Иконка наушников
-                        Center(
-                          child: ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
-                            ).createShader(bounds),
-                            child: Icon(
-                              Icons.headphones,
-                              size: 32,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+                  // Обложка трека или иконка наушников (слева)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: track!.image.isNotEmpty
+                          ? (track!.image.startsWith('http')
+                              ? Image.network(
+                                  track!.image,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _buildHeadphonesPlaceholder(),
+                                )
+                              : Image.asset(
+                                  track!.image,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _buildHeadphonesPlaceholder(),
+                                ))
+                          : _buildHeadphonesPlaceholder(),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -189,7 +237,7 @@ class MiniPlayer extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF202020), // Темно-серый
+                            color: transparentStyle ? Colors.white : const Color(0xFF202020),
                             height: 1.2,
                           ),
                           maxLines: 1,
@@ -201,7 +249,7 @@ class MiniPlayer extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: const Color(0xFF757575), // Светло-серый
+                            color: transparentStyle ? Colors.white70 : const Color(0xFF757575),
                             height: 1.0,
                           ),
                         ),
@@ -213,13 +261,14 @@ class MiniPlayer extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Кнопка "Назад" (SVG иконка)
-                      GestureDetector(
-                        onTap: onPrevious,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          child: SvgPicture.asset(
-                            'assets/icons/previous_button.svg',
+                      if (!isLoading) ...[
+                        // Кнопка "Назад" (SVG иконка)
+                        GestureDetector(
+                          onTap: onPrevious,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            child: SvgPicture.asset(
+                              'assets/icons/previous_button.svg',
                             width: 24,
                             height: 24,
                             placeholderBuilder: (context) => ShaderMask(
@@ -236,13 +285,39 @@ class MiniPlayer extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 2),
-                      // Кнопка "Пауза/Воспроизведение"
+                        const SizedBox(width: 2),
+                      ],
+                      // Кнопка "Пауза/Воспроизведение" или индикатор загрузки
                       GestureDetector(
-                        onTap: onPlayPause,
+                        onTap: isLoading ? () {} : onPlayPause,
                         child: Container(
                           padding: const EdgeInsets.all(6),
-                          child: isPlaying
+                          child: isLoading
+                              ? SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            transparentStyle ? Colors.white : const Color(0xFF46E4E3),
+                                          ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.play_arrow,
+                                        size: 18,
+                                        color: transparentStyle ? Colors.white : const Color(0xFF46E4E3),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : isPlaying
                               ? SvgPicture.asset(
                                   'assets/icons/pause_button.svg',
                                   width: 28,
@@ -271,42 +346,81 @@ class MiniPlayer extends StatelessWidget {
                                 ),
                         ),
                       ),
-                      const SizedBox(width: 2),
-                      // Кнопка "Вперед" (SVG иконка)
-                      GestureDetector(
-                        onTap: onNext,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          child: SvgPicture.asset(
-                            'assets/icons/next_button.svg',
-                            width: 24,
-                            height: 24,
-                            placeholderBuilder: (context) => ShaderMask(
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
-                              ).createShader(bounds),
-                              child: const Icon(
-                                Icons.skip_next,
-                                size: 24,
-                                color: Colors.white,
+                      if (!isLoading) ...[
+                        const SizedBox(width: 2),
+                        // Кнопка "Вперед" (SVG иконка)
+                        GestureDetector(
+                          onTap: onNext,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            child: SvgPicture.asset(
+                              'assets/icons/next_button.svg',
+                              width: 24,
+                              height: 24,
+                              placeholderBuilder: (context) => ShaderMask(
+                                shaderCallback: (bounds) => const LinearGradient(
+                                  colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
+                                ).createShader(bounds),
+                                child: const Icon(
+                                  Icons.skip_next,
+                                  size: 24,
+                                  color: Colors.white,
+                                ),
                               ),
+                              colorFilter: null,
                             ),
-                            colorFilter: null,
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ],
               ),
             ),
+  ];
+
+  Widget _buildHeadphonesPlaceholder() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFB3E5FC),
+            Colors.white,
           ],
         ),
       ),
-    ],
-  ),
-  ),
-);
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: CustomPaint(
+                painter: ParticlesPainter(),
+              ),
+            ),
+          ),
+          Center(
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFF44AAED), Color(0xFF46E4E3)],
+              ).createShader(bounds),
+              child: Icon(
+                Icons.headphones,
+                size: 32,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

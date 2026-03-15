@@ -1,8 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
 import '../../core/api/content_api.dart';
+import '../../core/audio/audio_service.dart';
 import '../../core/storage/recent_tracks_storage.dart';
 import '../../main.dart';
 import '../../shared/models/player_track.dart';
@@ -24,6 +26,7 @@ class PlayerScreen extends StatefulWidget {
 
 class _PlayerScreenState extends State<PlayerScreen> {
   List<PlayerTrack> _tracks = [];
+  List<MeditationTrack> _meditationTracks = [];
   List<PlayerTrack> _recentTracks = [];
   String? _activeTrackId;
   bool _isPlaying = false;
@@ -38,8 +41,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   Future<void> _loadTracks() async {
     try {
-      final med = await ContentApi.getMeditationTracks();
-      final sleep = await ContentApi.getSleepTracks();
+      final medSections = await ContentApi.getSectionsWithTracks('MEDITATION');
+      final sleepSections = await ContentApi.getSectionsWithTracks('SLEEP');
+      final med = medSections.expand((s) => s.tracks).toList();
+      final sleep = sleepSections.expand((s) => s.tracks).toList();
       final all = [...med, ...sleep];
       final tracks = all
           .map((t) => PlayerTrack(
@@ -51,11 +56,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
       final recent = await RecentTracksStorage.getRecentTracks();
       if (mounted) setState(() {
         _tracks = tracks;
+        _meditationTracks = all;
         _recentTracks = recent;
       });
     } catch (e) {
       if (mounted) setState(() {
         _tracks = [];
+        _meditationTracks = [];
         _recentTracks = [];
       });
     }
@@ -98,7 +105,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = (_activeTrackId != null ? 160.0 : 100.0);
+    final bottomPadding = (AudioService.instance.currentTrack != null ? 160.0 : 100.0);
 
     return Scaffold(
       body: Stack(
@@ -145,18 +152,28 @@ class _PlayerScreenState extends State<PlayerScreen> {
             ),
           ),
 
-          // Скроллируемый контент: прослушанные (до 15) + все треки
+          // Скроллируемый контент: прослушанные (до 15) + все треки — прозрачный как в OpenPlayer
           Positioned(
             top: 120,
             left: 0,
             right: 0,
             bottom: bottomPadding,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    border: Border(
+                      top: BorderSide(color: Colors.white.withOpacity(0.15), width: 1),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   // Последние 15 прослушанных
                   if (_recentTracks.isNotEmpty) ...[
                     ..._recentTracks.map((track) {
@@ -167,10 +184,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     const SizedBox(height: 24),
                     Text(
                       AppLocalizations.of(context)!.allTracks,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -178,101 +195,99 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   // Список всех треков
                   ..._tracks.asMap().entries.map((entry) {
                     final track = entry.value;
-                    final isActive = _activeTrackId == track.id;
-                    final isPlaying = isActive && _isPlaying;
+                    final isActive = AudioService.instance.currentTrack?.id == track.id;
+                    final isPlaying = isActive && AudioService.instance.isPlaying;
                     return _buildTrackCard(track, isActive, isPlaying);
                   }).toList(),
                 ],
               ),
+                ),
+              ),
             ),
           ),
+        ),
 
           // Мини-плеер
-          if (_activeTrackId != null)
-            MiniPlayer(
-              bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
-              track: _createMeditationTrackFromPlayerTrack(
-                _tracks.firstWhere((t) => t.id == _activeTrackId),
-              ),
-              isPlaying: _isPlaying,
-              progress: _progress,
-              currentTime: _currentTime,
-              totalTime: '3:42',
-              onTap: () {
-                final idx = _tracks.indexWhere((t) => t.id == _activeTrackId);
-                final pt = idx >= 0 ? _tracks[idx] : _tracks.first;
-                final mtList = _tracks.map(_createMeditationTrackFromPlayerTrack).toList();
-                Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (context) => OpenPlayerScreen(
-                      track: _createMeditationTrackFromPlayerTrack(pt),
-                      tracks: mtList,
-                      initialIndex: idx >= 0 ? idx : 0,
-                      isPlaying: _isPlaying,
-                      progress: _progress,
-                      currentTime: _currentTime,
-                      totalTime: '3:42',
-                      onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
-                      onPrevious: () {
-                        if (idx > 0) setState(() {
-                          _activeTrackId = _tracks[idx - 1].id;
-                          _isPlaying = true;
-                          _progress = 0.0;
-                        });
-                      },
-                      onNext: () {
-                        if (idx < _tracks.length - 1) setState(() {
-                          _activeTrackId = _tracks[idx + 1].id;
-                          _isPlaying = true;
-                          _progress = 0.0;
-                        });
-                      },
+          ListenableBuilder(
+            listenable: AudioService.instance,
+            builder: (context, _) {
+              final active = AudioService.instance.currentTrack;
+              if (active == null) return const SizedBox.shrink();
+              final ctx = AudioService.instance.currentTrackContext;
+              final mtList = ctx.isNotEmpty ? ctx : _meditationTracks;
+              final idx = _tracks.indexWhere((t) => t.id == active.id);
+              final trackForPlayer = idx >= 0 && idx < _meditationTracks.length
+                  ? _meditationTracks[idx]
+                  : _meditationTracks.isNotEmpty && _meditationTracks.any((m) => m.id == active.id)
+                      ? _meditationTracks.firstWhere((m) => m.id == active.id)
+                      : active;
+              return MiniPlayer(
+                bottomOffset: HarmonyBottomNav.miniPlayerBottomOffset(context),
+                transparentStyle: true,
+                bottomOffsetAdjustment: -40,
+                track: trackForPlayer,
+                isPlaying: AudioService.instance.isPlaying,
+                isLoading: AudioService.instance.isLoading,
+                progress: AudioService.instance.progress,
+                currentTime: AudioService.instance.formattedPosition,
+                totalTime: trackForPlayer.durationSeconds != null
+                    ? MeditationTrack.formatDuration(trackForPlayer.durationSeconds)
+                    : AudioService.instance.formattedDuration,
+                onTap: () {
+                  final trackIdx = mtList.indexWhere((t) => t.id == active.id);
+                  Navigator.of(context).push<String>(
+                    MaterialPageRoute(
+                      builder: (context) => OpenPlayerScreen(
+                        track: trackForPlayer,
+                        tracks: mtList.isNotEmpty ? mtList : [trackForPlayer],
+                        initialIndex: trackIdx >= 0 ? trackIdx : 0,
+                        isPlaying: AudioService.instance.isPlaying,
+                        progress: AudioService.instance.progress,
+                        currentTime: AudioService.instance.formattedPosition,
+                        totalTime: trackForPlayer.durationSeconds != null
+                            ? MeditationTrack.formatDuration(trackForPlayer.durationSeconds)
+                            : AudioService.instance.formattedDuration,
+                        onPlayPause: () => AudioService.instance.togglePlayPause(),
+                        onPrevious: () {
+                          if (trackIdx > 0) {
+                            final prev = mtList[trackIdx - 1];
+                            AudioService.instance.setActiveTrack(prev, mtList);
+                            if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
+                          }
+                        },
+                        onNext: () {
+                          if (trackIdx < mtList.length - 1) {
+                            final next = mtList[trackIdx + 1];
+                            AudioService.instance.setActiveTrack(next, mtList);
+                            if (next.video.isNotEmpty) AudioService.instance.play(next.video);
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                ).then((newActiveId) async {
-                  if (newActiveId != null && mounted) {
-                    setState(() => _activeTrackId = newActiveId);
-                    final idx = _tracks.indexWhere((t) => t.id == newActiveId);
-                    if (idx >= 0) {
-                      await RecentTracksStorage.addRecentTrack(_tracks[idx]);
-                      if (mounted) {
-                        final recent = await RecentTracksStorage.getRecentTracks();
-                        setState(() => _recentTracks = recent);
-                      }
-                    }
+                  );
+                },
+                onPlayPause: () => AudioService.instance.togglePlayPause(),
+                onPrevious: () {
+                  final i = ctx.indexWhere((t) => t.id == active.id);
+                  if (i > 0) {
+                    final prev = ctx[i - 1];
+                    AudioService.instance.setActiveTrack(prev, ctx);
+                    if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
+                    setState(() => _activeTrackId = prev.id);
                   }
-                });
-              },
-              onPlayPause: () {
-                setState(() {
-                  _isPlaying = !_isPlaying;
-                });
-              },
-              onPrevious: () {
-                if (_activeTrackId != null) {
-                  final currentIndex = _tracks.indexWhere((t) => t.id == _activeTrackId);
-                  if (currentIndex > 0) {
-                    setState(() {
-                      _activeTrackId = _tracks[currentIndex - 1].id;
-                      _isPlaying = true;
-                      _progress = 0.0;
-                    });
+                },
+                onNext: () {
+                  final i = ctx.indexWhere((t) => t.id == active.id);
+                  if (i >= 0 && i < ctx.length - 1) {
+                    final next = ctx[i + 1];
+                    AudioService.instance.setActiveTrack(next, ctx);
+                    if (next.video.isNotEmpty) AudioService.instance.play(next.video);
+                    setState(() => _activeTrackId = next.id);
                   }
-                }
-              },
-              onNext: () {
-                if (_activeTrackId != null) {
-                  final currentIndex = _tracks.indexWhere((t) => t.id == _activeTrackId);
-                  if (currentIndex < _tracks.length - 1) {
-                    setState(() {
-                      _activeTrackId = _tracks[currentIndex + 1].id;
-                      _isPlaying = true;
-                      _progress = 0.0;
-                    });
-                  }
-                }
-              },
-            ),
+                },
+              );
+            },
+          ),
 
           // Нижнее меню навигации
           Positioned(
@@ -283,7 +298,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               activeTab: HarmonyTab.player,
               onTabSelected: _handleBottomNavTap,
               leadingEdgeCutoutTab: HarmonyTab.player,
-              iconsBlack: _activeTrackId != null,
+              iconsBlack: false,
             ),
           ),
         ],
@@ -311,30 +326,43 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget _buildTrackCard(PlayerTrack track, bool isActive, bool isPlaying) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          if (_activeTrackId == track.id) {
-            _isPlaying = !_isPlaying;
-          } else {
+        if (AudioService.instance.currentTrack?.id == track.id) {
+          AudioService.instance.togglePlayPause();
+          setState(() => _isPlaying = AudioService.instance.isPlaying);
+        } else {
+          final idx = _tracks.indexWhere((t) => t.id == track.id);
+          final mt = idx >= 0 && idx < _meditationTracks.length
+              ? _meditationTracks[idx]
+              : MeditationTrack(
+                  id: track.id,
+                  title: track.title,
+                  description: track.artist,
+                  level: '',
+                  image: '',
+                  video: '',
+                  type: '',
+                  category: '',
+                  isPremium: false,
+                  isPlaying: false,
+                );
+          AudioService.instance.setActiveTrack(mt, _meditationTracks.isNotEmpty ? _meditationTracks : [mt]);
+          if (mt.video.isNotEmpty) {
+            AudioService.instance.play(mt.video);
+          }
+          setState(() {
             _activeTrackId = track.id;
             _isPlaying = true;
-            _progress = 0.0;
-          }
-        });
+          });
+        }
         _onTrackPlay(track);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.08), // Еще более прозрачный серый фон
-          borderRadius: BorderRadius.circular(12), // Чуть больше закругленность
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.12),
-              blurRadius: 2,
-              offset: const Offset(0, 1.5),
-            ),
-          ],
+          color: Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
         ),
         child: Row(
           children: [
@@ -395,7 +423,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF202020), // fill="#202020" из SVG
+                      color: Colors.white,
                       height: 1.2,
                     ),
                     maxLines: 1,
@@ -407,7 +435,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: const Color(0xFF202020).withOpacity(0.4), // fill="#202020" fill-opacity="0.4" из SVG
+                      color: Colors.white.withOpacity(0.75),
                       height: 1.2,
                     ),
                     maxLines: 1,

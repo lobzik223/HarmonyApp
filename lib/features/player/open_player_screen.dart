@@ -81,6 +81,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
     if (_tracks.length > 1 && _currentIndex > 0) {
       setState(() => _currentIndex = _currentIndex - 1);
       final prev = _tracks[_currentIndex];
+      AudioService.instance.setActiveTrack(prev, _tracks);
       if (prev.video.isNotEmpty) AudioService.instance.play(prev.video);
       _registerOpenedTrack();
     }
@@ -91,6 +92,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
     if (_tracks.length > 1 && _currentIndex < _tracks.length - 1) {
       setState(() => _currentIndex = _currentIndex + 1);
       final next = _tracks[_currentIndex];
+      AudioService.instance.setActiveTrack(next, _tracks);
       if (next.video.isNotEmpty) AudioService.instance.play(next.video);
       _registerOpenedTrack();
     }
@@ -187,7 +189,9 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
+                Transform.translate(
+                  offset: const Offset(0, 80),
+                  child: ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -196,6 +200,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                     filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                     child: Container(
                       width: double.infinity,
+                      padding: EdgeInsets.only(bottom: HarmonyBottomNav.totalHeight(context) - 8),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.24),
                         borderRadius: const BorderRadius.only(
@@ -216,6 +221,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                               ? svc.formattedDuration
                               : _resolveTotalTime();
                           final isPlaying = svc.isPlaying;
+                          final isLoading = svc.isLoading;
                           return Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -290,19 +296,26 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        if (!isLoading) ...[
+                                          _buildControlButton(
+                                            icon: Icons.skip_previous_rounded,
+                                            onTap: _handlePrevious,
+                                          ),
+                                        ],
                                         _buildControlButton(
-                                          icon: Icons.skip_previous_rounded,
-                                          onTap: _handlePrevious,
-                                        ),
-                                        _buildControlButton(
-                                          icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                          onTap: _handlePlayPause,
+                                          icon: isLoading
+                                              ? Icons.play_arrow_rounded
+                                              : (isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                                          onTap: isLoading ? () {} : _handlePlayPause,
                                           isCenter: true,
+                                          isLoading: isLoading,
                                         ),
-                                        _buildControlButton(
-                                          icon: Icons.skip_next_rounded,
-                                          onTap: _handleNext,
-                                        ),
+                                        if (!isLoading) ...[
+                                          _buildControlButton(
+                                            icon: Icons.skip_next_rounded,
+                                            onTap: _handleNext,
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ],
@@ -314,6 +327,7 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
                       ),
                     ),
                   ),
+                ),
                 ),
                 HarmonyBottomNav(
                   activeTab: HarmonyTab.player,
@@ -340,7 +354,18 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
         final width = constraints.maxWidth;
         final thumbLeft = (width * p).clamp(thumbRadius, width - thumbRadius);
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTapDown: (d) {
+            final x = d.localPosition.dx;
+            final newProgress = (x / width).clamp(0.0, 1.0);
+            AudioService.instance.seekTo(newProgress);
+          },
+          onPanStart: (d) {
+            final x = d.localPosition.dx;
+            final newProgress = (x / width).clamp(0.0, 1.0);
+            AudioService.instance.seekTo(newProgress);
+          },
+          onPanUpdate: (d) {
             final x = d.localPosition.dx;
             final newProgress = (x / width).clamp(0.0, 1.0);
             AudioService.instance.seekTo(newProgress);
@@ -474,7 +499,9 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
     required IconData icon,
     required VoidCallback onTap,
     bool isCenter = false,
+    bool isLoading = false,
   }) {
+    const teal = Color(0xFF46E4E3);
     final size = isCenter ? 36.0 : 24.0;
     return Material(
       color: Colors.transparent,
@@ -483,7 +510,26 @@ class _OpenPlayerScreenState extends State<OpenPlayerScreen> {
         borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
-          child: Icon(icon, size: size, color: Colors.white),
+          child: isLoading
+              ? SizedBox(
+                  width: size + 8,
+                  height: size + 8,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: size,
+                        height: size,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(teal),
+                        ),
+                      ),
+                      Icon(icon, size: size * 0.6, color: teal),
+                    ],
+                  ),
+                )
+              : Icon(icon, size: size, color: Colors.white),
         ),
       ),
     );
