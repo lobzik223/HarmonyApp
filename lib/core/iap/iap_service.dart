@@ -29,12 +29,12 @@ class IapService {
   List<ProductDetails> _products = [];
   List<String> get productIds => IapProductIds.allIds;
 
-  bool get isAvailable => _initialized && _iap.isAvailable();
+  Future<bool> isAvailable() async => _initialized && await _iap.isAvailable();
   List<ProductDetails> get products => List.unmodifiable(_products);
 
   /// Инициализация и подписка на поток покупок. Вызвать при старте приложения (например, перед открытием экрана подписки).
   Future<bool> initialize() async {
-    if (_initialized) return _iap.isAvailable();
+    if (_initialized) return await _iap.isAvailable();
     final available = await _iap.isAvailable();
     if (!available) {
       if (kDebugMode) debugPrint('[IAP] Store not available');
@@ -107,11 +107,11 @@ class IapService {
   /// Загрузить продукты по ID из [IapProductIds.allIds].
   Future<bool> loadProducts() async {
     if (!_initialized) await initialize();
-    if (!_iap.isAvailable()) {
+    if (!await _iap.isAvailable()) {
       _products = [];
       return false;
     }
-    final response = await _iap.getProductDetails(productIds.toSet());
+    final response = await _iap.queryProductDetails(productIds.toSet());
     if (response.notFoundIDs.isNotEmpty && kDebugMode) {
       debugPrint('[IAP] Not found: ${response.notFoundIDs}');
     }
@@ -123,7 +123,7 @@ class IapService {
   /// Возвращает [IapResult] по завершении (success / cancelled / error / notAvailable).
   Future<IapResult> buy(String productId) async {
     if (!_initialized) await initialize();
-    if (!_iap.isAvailable()) return IapResult.notAvailable;
+    if (!await _iap.isAvailable()) return IapResult.notAvailable;
     ProductDetails? product;
     try {
       product = _products.firstWhere((p) => p.id == productId);
@@ -147,7 +147,7 @@ class IapService {
   /// Восстановить покупки (все активные подписки отправляются на бэкенд для верификации).
   Future<IapResult> restore() async {
     if (!_initialized) await initialize();
-    if (!_iap.isAvailable()) return IapResult.notAvailable;
+    if (!await _iap.isAvailable()) return IapResult.notAvailable;
     _purchaseCompleter = Completer<IapResult>();
     await _iap.restorePurchases();
     // restorePurchases() выдаст события в purchaseStream для каждой восстановленной покупки;

@@ -27,27 +27,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get buy => 'Купить';
 
   @override
-  String get restorePurchases => 'Восстановить покупки';
-
-  @override
-  String get purchaseSuccess => 'Подписка активирована';
-
-  @override
-  String get purchaseCancelled => 'Покупка отменена';
-
-  @override
-  String get purchaseError => 'Ошибка покупки. Попробуйте снова.';
-
-  @override
-  String get restoreSuccess => 'Покупки восстановлены';
-
-  @override
-  String get restoreError => 'Нечего восстанавливать или ошибка';
-
-  @override
-  String get storeNotAvailable => 'Магазин недоступен';
-
-  @override
   String get all => 'Все';
 
   @override
@@ -430,7 +409,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get yearPlan => 'ГОД';
 
   @override
-  String get price199PerMonth => '199р. / мес';
+  String get price199PerMonth => '199₽ / мес';
 
   @override
   String get price2390PerYear => '2390р. / год';
@@ -445,6 +424,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String discountPercent(int percent) {
     return 'ВЫГОДА $percent%';
   }
+
+  @override
+  String get restorePurchases => 'Восстановить покупки';
+
+  @override
+  String get purchaseSuccess => 'Подписка активирована';
+
+  @override
+  String get purchaseCancelled => 'Покупка отменена';
+
+  @override
+  String get purchaseError => 'Ошибка покупки. Попробуйте снова.';
+
+  @override
+  String get restoreSuccess => 'Покупки восстановлены';
+
+  @override
+  String get restoreError => 'Нечего восстанавливать или ошибка';
+
+  @override
+  String get storeNotAvailable => 'Магазин недоступен';
 
   @override
   String get proBadge => 'Pro';

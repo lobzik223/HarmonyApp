@@ -134,14 +134,6 @@ abstract class AppLocalizations {
   /// **'Buy'**
   String get buy;
 
-  String get restorePurchases;
-  String get purchaseSuccess;
-  String get purchaseCancelled;
-  String get purchaseError;
-  String get restoreSuccess;
-  String get restoreError;
-  String get storeNotAvailable;
-
   /// No description provided for @all.
   ///
   /// In en, this message translates to:
@@ -838,6 +830,10 @@ abstract class AppLocalizations {
   /// **'Buy for 249 ₽'**
   String get buyFor249;
 
+  /// No description provided for @buyFor299.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy for 299 ₽'**
   String get buyFor299;
 
   /// No description provided for @feelFullHarmonyWith.
@@ -864,6 +860,10 @@ abstract class AppLocalizations {
   /// **'265 ₽/month'**
   String get price265PerMonth;
 
+  /// No description provided for @price299PerMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'299₽/month'**
   String get price299PerMonth;
 
   /// No description provided for @tryButton.
@@ -890,8 +890,16 @@ abstract class AppLocalizations {
   /// **'2390₽/year'**
   String get price2390PerYear;
 
+  /// No description provided for @price2388PerYear.
+  ///
+  /// In en, this message translates to:
+  /// **'2388₽/year'**
   String get price2388PerYear;
 
+  /// No description provided for @premiumYearDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'33% off/1200₽ saved'**
   String get premiumYearDiscount;
 
   /// No description provided for @discountPercent.
@@ -900,28 +908,118 @@ abstract class AppLocalizations {
   /// **'SAVE {percent}%'**
   String discountPercent(int percent);
 
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restorePurchases;
+
+  /// No description provided for @purchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription activated'**
+  String get purchaseSuccess;
+
+  /// No description provided for @purchaseCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase cancelled'**
+  String get purchaseCancelled;
+
+  /// No description provided for @purchaseError.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed. Try again.'**
+  String get purchaseError;
+
+  /// No description provided for @restoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored'**
+  String get restoreSuccess;
+
+  /// No description provided for @restoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to restore or error'**
+  String get restoreError;
+
+  /// No description provided for @storeNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Store not available'**
+  String get storeNotAvailable;
+
+  /// No description provided for @proBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
   String get proBadge;
 
+  /// No description provided for @coursesProTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'COURSES — PRO SUBSCRIPTION'**
   String get coursesProTitle;
 
+  /// No description provided for @feelFullHarmonyWithPro.
+  ///
+  /// In en, this message translates to:
+  /// **'FULL ACCESS TO COURSES WITH'**
   String get feelFullHarmonyWithPro;
 
+  /// No description provided for @subscribeProFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro subscription from 2599₽/month'**
   String get subscribeProFrom;
 
+  /// No description provided for @price2599Month.
+  ///
+  /// In en, this message translates to:
+  /// **'2599₽/month'**
   String get price2599Month;
 
+  /// No description provided for @price5997ThreeMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'5997₽/3 months'**
   String get price5997ThreeMonths;
 
+  /// No description provided for @price8994SixMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'8994₽/6 months'**
   String get price8994SixMonths;
 
+  /// No description provided for @price12475Year.
+  ///
+  /// In en, this message translates to:
+  /// **'12475₽/12 months'**
   String get price12475Year;
 
+  /// No description provided for @threeMonthsPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'3 MONTHS'**
   String get threeMonthsPlan;
 
+  /// No description provided for @sixMonthsPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'6 MONTHS'**
   String get sixMonthsPlan;
 
+  /// No description provided for @twelveMonthsPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'12 MONTHS'**
   String get twelveMonthsPlan;
 
+  /// No description provided for @perMonthShort.
+  ///
+  /// In en, this message translates to:
+  /// **'per month'**
   String get perMonthShort;
 
   /// No description provided for @errorBackgroundNotLoaded.

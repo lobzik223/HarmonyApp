@@ -27,27 +27,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buy => 'Buy';
 
   @override
-  String get restorePurchases => 'Restore purchases';
-
-  @override
-  String get purchaseSuccess => 'Subscription activated';
-
-  @override
-  String get purchaseCancelled => 'Purchase cancelled';
-
-  @override
-  String get purchaseError => 'Purchase failed. Try again.';
-
-  @override
-  String get restoreSuccess => 'Purchases restored';
-
-  @override
-  String get restoreError => 'Nothing to restore or error';
-
-  @override
-  String get storeNotAvailable => 'Store not available';
-
-  @override
   String get all => 'All';
 
   @override
@@ -445,6 +424,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String discountPercent(int percent) {
     return 'SAVE $percent%';
   }
+
+  @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get purchaseSuccess => 'Subscription activated';
+
+  @override
+  String get purchaseCancelled => 'Purchase cancelled';
+
+  @override
+  String get purchaseError => 'Purchase failed. Try again.';
+
+  @override
+  String get restoreSuccess => 'Purchases restored';
+
+  @override
+  String get restoreError => 'Nothing to restore or error';
+
+  @override
+  String get storeNotAvailable => 'Store not available';
 
   @override
   String get proBadge => 'Pro';
