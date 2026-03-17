@@ -27,6 +27,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String get buy => 'Купить';
 
   @override
+  String get restorePurchases => 'Восстановить покупки';
+
+  @override
+  String get purchaseSuccess => 'Подписка активирована';
+
+  @override
+  String get purchaseCancelled => 'Покупка отменена';
+
+  @override
+  String get purchaseError => 'Ошибка покупки. Попробуйте снова.';
+
+  @override
+  String get restoreSuccess => 'Покупки восстановлены';
+
+  @override
+  String get restoreError => 'Нечего восстанавливать или ошибка';
+
+  @override
+  String get storeNotAvailable => 'Магазин недоступен';
+
+  @override
   String get all => 'Все';
 
   @override
@@ -385,6 +406,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get buyFor249 => 'Купить за 249 р.';
 
   @override
+  String get buyFor299 => 'Купить за 299 р.';
+
+  @override
   String get feelFullHarmonyWith => 'ПОЧУВСТВУЙ ПОЛНУЮ ГАРМОНИЮ С';
 
   @override
@@ -395,6 +419,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get price265PerMonth => '265 р. / мес';
+
+  @override
+  String get price299PerMonth => '299₽ / мес';
 
   @override
   String get tryButton => 'ПОПРОБУЙТЕ';
@@ -409,9 +436,51 @@ class AppLocalizationsRu extends AppLocalizations {
   String get price2390PerYear => '2390р. / год';
 
   @override
+  String get price2388PerYear => '2388₽ / год';
+
+  @override
+  String get premiumYearDiscount => 'со скидкой 33%/1200₽';
+
+  @override
   String discountPercent(int percent) {
     return 'ВЫГОДА $percent%';
   }
+
+  @override
+  String get proBadge => 'Pro';
+
+  @override
+  String get coursesProTitle => 'КУРСЫ — ПОДПИСКА PRO';
+
+  @override
+  String get feelFullHarmonyWithPro => 'ПОЛНЫЙ ДОСТУП К КУРСАМ С';
+
+  @override
+  String get subscribeProFrom => 'подписка Pro от 2599₽/мес';
+
+  @override
+  String get price2599Month => '2599₽ / мес';
+
+  @override
+  String get price5997ThreeMonths => '5997₽ / 3 мес';
+
+  @override
+  String get price8994SixMonths => '8994₽ / 6 мес';
+
+  @override
+  String get price12475Year => '12475₽ / 12 мес';
+
+  @override
+  String get threeMonthsPlan => '3 МЕС';
+
+  @override
+  String get sixMonthsPlan => '6 МЕС';
+
+  @override
+  String get twelveMonthsPlan => '12 МЕС';
+
+  @override
+  String get perMonthShort => 'в мес';
 
   @override
   String get errorBackgroundNotLoaded => 'Фон не загружен';

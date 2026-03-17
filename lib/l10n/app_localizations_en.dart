@@ -27,6 +27,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buy => 'Buy';
 
   @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get purchaseSuccess => 'Subscription activated';
+
+  @override
+  String get purchaseCancelled => 'Purchase cancelled';
+
+  @override
+  String get purchaseError => 'Purchase failed. Try again.';
+
+  @override
+  String get restoreSuccess => 'Purchases restored';
+
+  @override
+  String get restoreError => 'Nothing to restore or error';
+
+  @override
+  String get storeNotAvailable => 'Store not available';
+
+  @override
   String get all => 'All';
 
   @override
@@ -385,6 +406,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buyFor249 => 'Buy for 249 ₽';
 
   @override
+  String get buyFor299 => 'Buy for 299 ₽';
+
+  @override
   String get feelFullHarmonyWith => 'FEEL FULL HARMONY WITH';
 
   @override
@@ -395,6 +419,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get price265PerMonth => '265 ₽/month';
+
+  @override
+  String get price299PerMonth => '299₽/month';
 
   @override
   String get tryButton => 'TRY';
@@ -409,9 +436,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get price2390PerYear => '2390₽/year';
 
   @override
+  String get price2388PerYear => '2388₽/year';
+
+  @override
+  String get premiumYearDiscount => '33% off/1200₽ saved';
+
+  @override
   String discountPercent(int percent) {
     return 'SAVE $percent%';
   }
+
+  @override
+  String get proBadge => 'Pro';
+
+  @override
+  String get coursesProTitle => 'COURSES — PRO SUBSCRIPTION';
+
+  @override
+  String get feelFullHarmonyWithPro => 'FULL ACCESS TO COURSES WITH';
+
+  @override
+  String get subscribeProFrom => 'Pro subscription from 2599₽/month';
+
+  @override
+  String get price2599Month => '2599₽/month';
+
+  @override
+  String get price5997ThreeMonths => '5997₽/3 months';
+
+  @override
+  String get price8994SixMonths => '8994₽/6 months';
+
+  @override
+  String get price12475Year => '12475₽/12 months';
+
+  @override
+  String get threeMonthsPlan => '3 MONTHS';
+
+  @override
+  String get sixMonthsPlan => '6 MONTHS';
+
+  @override
+  String get twelveMonthsPlan => '12 MONTHS';
+
+  @override
+  String get perMonthShort => 'per month';
 
   @override
   String get errorBackgroundNotLoaded => 'Background failed to load';

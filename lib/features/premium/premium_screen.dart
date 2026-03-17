@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/utils/navigation_utils.dart';
+import '../../core/api/payments_api.dart';
+import '../../core/iap/iap_service.dart';
 
 /// Экран Premium подписки
 class PremiumScreen extends StatefulWidget {
@@ -13,7 +15,73 @@ class PremiumScreen extends StatefulWidget {
 }
 
 class _PremiumScreenState extends State<PremiumScreen> {
-  int _currentGiftIndex = 0; // Индекс текущего подарка в карусели
+  int _currentGiftIndex = 0;
+  bool _loadingProducts = true;
+  bool _purchasing = false;
+  final _iap = IapService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _initIap();
+  }
+
+  Future<void> _initIap() async {
+    await _iap.initialize();
+    await _iap.loadProducts();
+    if (mounted) setState(() => _loadingProducts = false);
+  }
+
+  Future<void> _buyProduct(String productId) async {
+    if (_purchasing) return;
+    if (!_iap.isAvailable()) {
+      _showSnack(AppLocalizations.of(context)!.storeNotAvailable);
+      return;
+    }
+    setState(() => _purchasing = true);
+    final result = await _iap.buy(productId);
+    if (!mounted) return;
+    setState(() => _purchasing = false);
+    final l10n = AppLocalizations.of(context)!;
+    switch (result) {
+      case IapResult.success:
+        _showSnack(l10n.purchaseSuccess);
+        Navigator.of(context).pop();
+        break;
+      case IapResult.cancelled:
+        _showSnack(l10n.purchaseCancelled);
+        break;
+      case IapResult.error:
+      case IapResult.notAvailable:
+        _showSnack(l10n.purchaseError);
+        break;
+    }
+  }
+
+  Future<void> _restorePurchases() async {
+    if (_purchasing) return;
+    if (!_iap.isAvailable()) {
+      _showSnack(AppLocalizations.of(context)!.storeNotAvailable);
+      return;
+    }
+    setState(() => _purchasing = true);
+    final result = await _iap.restore();
+    if (!mounted) return;
+    setState(() => _purchasing = false);
+    final l10n = AppLocalizations.of(context)!;
+    if (result == IapResult.success) {
+      _showSnack(l10n.restoreSuccess);
+      Navigator.of(context).pop();
+    } else {
+      _showSnack(l10n.restoreError);
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,19 +242,39 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   
                   const SizedBox(height: 24),
                   
-                  // Кнопка "Купить за 249 р."
-                  _buildBuyButton(AppLocalizations.of(context)!.buyFor249),
+                  // Кнопка "Купить за 299 р."
+                  _buildBuyButton(AppLocalizations.of(context)!.buyFor299),
                   
                   const SizedBox(height: 40),
                   
                   // Нижняя секция с белым фоном
                   _buildSubscriptionSection(),
-                  
+
+                  // Восстановить покупки
+                  const SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: _purchasing ? null : _restorePurchases,
+                    icon: const Icon(Icons.restore, color: Colors.white, size: 20),
+                    label: Text(
+                      AppLocalizations.of(context)!.restorePurchases,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
                 ],
               ),
             ),
           ),
+
+          // Оверлей загрузки при покупке/восстановлении
+          if (_purchasing)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
         ],
       ),
     );
@@ -333,9 +421,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
   Widget _buildBuyButton(String text) {
     return GestureDetector(
-      onTap: () {
-        // Логика покупки
-      },
+      onTap: () => _buyProduct(IapProductIds.premiumMonth),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -507,18 +593,173 @@ class _PremiumScreenState extends State<PremiumScreen> {
               children: [
                 _buildSubscriptionCard(
                   title: AppLocalizations.of(context)!.monthPlan,
-                  price: AppLocalizations.of(context)!.price265PerMonth,
+                  price: AppLocalizations.of(context)!.price299PerMonth,
                   showTryButton: true,
-                  onBuy: () {},
+                  onBuy: () => _buyProduct(IapProductIds.premiumMonth),
                 ),
                 const SizedBox(height: 12),
                 _buildSubscriptionCard(
                   title: AppLocalizations.of(context)!.yearPlan,
                   price: AppLocalizations.of(context)!.price199PerMonth,
-                  priceYear: AppLocalizations.of(context)!.price2390PerYear,
+                  priceYear: AppLocalizations.of(context)!.price2388PerYear,
+                  priceSubtext: AppLocalizations.of(context)!.premiumYearDiscount,
                   showDiscount: true,
-                  discountPercent: 20,
-                  onBuy: () {},
+                  discountPercent: 33,
+                  onBuy: () => _buyProduct(IapProductIds.premiumYear),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          _buildProSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProBadge() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: const BoxDecoration(
+            color: Color(0xFF5BB8E8),
+            shape: BoxShape.circle,
+          ),
+          child: ClipOval(
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: ColorFiltered(
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                child: Image.asset(
+                  'assets/icons/harmonyicon.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.apps, color: Colors.white, size: 10),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: -2),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF5BB8E8),
+                Color(0xFF46E4E3),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            AppLocalizations.of(context)!.proBadge,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProSection() {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                l10n.coursesProTitle,
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  height: 1.18,
+                  color: const Color(0xFF202020),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildProBadge(),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.subscribeProFrom,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              height: 1.2,
+              color: const Color(0xFF202020),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF1A53EA),
+                  Color(0xFF2CC4E7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              children: [
+                _buildSubscriptionCard(
+                  title: l10n.monthPlan,
+                  price: l10n.price2599Month,
+                  showTryButton: true,
+                  onBuy: () => _buyProduct(IapProductIds.proMonth),
+                ),
+                const SizedBox(height: 12),
+                _buildSubscriptionCard(
+                  title: l10n.threeMonthsPlan,
+                  price: l10n.price5997ThreeMonths,
+                  showDiscount: true,
+                  discountPercent: 23,
+                  onBuy: () => _buyProduct(IapProductIds.pro3Months),
+                ),
+                const SizedBox(height: 12),
+                _buildSubscriptionCard(
+                  title: l10n.sixMonthsPlan,
+                  price: l10n.price8994SixMonths,
+                  showDiscount: true,
+                  discountPercent: 42,
+                  onBuy: () => _buyProduct(IapProductIds.pro6Months),
+                ),
+                const SizedBox(height: 12),
+                _buildSubscriptionCard(
+                  title: l10n.twelveMonthsPlan,
+                  price: l10n.price12475Year,
+                  showDiscount: true,
+                  discountPercent: 60,
+                  onBuy: () => _buyProduct(IapProductIds.proYear),
                 ),
               ],
             ),
@@ -532,6 +773,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
     required String title,
     required String price,
     String? priceYear,
+    String? priceSubtext,
     bool showTryButton = false,
     bool showDiscount = false,
     int? discountPercent,
@@ -596,6 +838,17 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                    if (priceSubtext != null && priceSubtext.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        priceSubtext,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                           color: textSecondary,
                         ),
                       ),

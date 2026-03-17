@@ -134,6 +134,14 @@ abstract class AppLocalizations {
   /// **'Buy'**
   String get buy;
 
+  String get restorePurchases;
+  String get purchaseSuccess;
+  String get purchaseCancelled;
+  String get purchaseError;
+  String get restoreSuccess;
+  String get restoreError;
+  String get storeNotAvailable;
+
   /// No description provided for @all.
   ///
   /// In en, this message translates to:
@@ -830,6 +838,8 @@ abstract class AppLocalizations {
   /// **'Buy for 249 ₽'**
   String get buyFor249;
 
+  String get buyFor299;
+
   /// No description provided for @feelFullHarmonyWith.
   ///
   /// In en, this message translates to:
@@ -853,6 +863,8 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'265 ₽/month'**
   String get price265PerMonth;
+
+  String get price299PerMonth;
 
   /// No description provided for @tryButton.
   ///
@@ -878,11 +890,39 @@ abstract class AppLocalizations {
   /// **'2390₽/year'**
   String get price2390PerYear;
 
+  String get price2388PerYear;
+
+  String get premiumYearDiscount;
+
   /// No description provided for @discountPercent.
   ///
   /// In en, this message translates to:
   /// **'SAVE {percent}%'**
   String discountPercent(int percent);
+
+  String get proBadge;
+
+  String get coursesProTitle;
+
+  String get feelFullHarmonyWithPro;
+
+  String get subscribeProFrom;
+
+  String get price2599Month;
+
+  String get price5997ThreeMonths;
+
+  String get price8994SixMonths;
+
+  String get price12475Year;
+
+  String get threeMonthsPlan;
+
+  String get sixMonthsPlan;
+
+  String get twelveMonthsPlan;
+
+  String get perMonthShort;
 
   /// No description provided for @errorBackgroundNotLoaded.
   ///

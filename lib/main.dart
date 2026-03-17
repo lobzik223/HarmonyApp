@@ -1045,26 +1045,36 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Фото целиком, без фона и линий — как в «О силе мышления»
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(
-                    height: 190,
-                    width: double.infinity,
-                    child: Image.network(
-                      course.image,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                // Фото целиком, бейдж Pro (раздел «Курсы» — подписка Pro)
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SizedBox(
+                        height: 190,
                         width: double.infinity,
-                        height: double.infinity,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A237E),
-                          borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          course.image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A237E),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(Icons.image, color: Colors.white54, size: 48),
+                          ),
                         ),
-                        child: const Icon(Icons.image, color: Colors.white54, size: 48),
                       ),
                     ),
-                  ),
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: _buildProTrackBadge(),
+                    ),
+                  ],
                 ),
                 // Название и описание под карточкой — без фона, как в «О силе мышления»
                 Padding(
@@ -1270,6 +1280,53 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Text(
             'PREMIUM',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Бейдж Pro для раздела «Курсы» — такой же стиль, как Premium, но текст «Pro».
+  Widget _buildProTrackBadge() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: const BoxDecoration(
+            color: Color(0xFF4DB2EA),
+            shape: BoxShape.circle,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              child: Image.asset(
+                'assets/icons/harmonyicon.png',
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.auto_awesome, color: Colors.white, size: 12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: -2),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF46AEE8), Color(0xFF46E4E3)],
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Text(
+            'Pro',
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w700,
